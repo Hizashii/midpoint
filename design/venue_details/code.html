@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-container-lowest": "#ffffff",
+              "secondary-fixed": "#e6e1e1",
+              "background": "#fdf8f8",
+              "tertiary-fixed-dim": "#79d6cf",
+              "surface-container-highest": "#e6e1e1",
+              "outline-variant": "#c1c6d7",
+              "on-secondary": "#ffffff",
+              "on-surface": "#1c1b1b",
+              "on-background": "#1c1b1b",
+              "on-primary-fixed-variant": "#004493",
+              "on-primary-fixed": "#001a41",
+              "surface-dim": "#ddd9d8",
+              "secondary-container": "#e6e1e1",
+              "surface-container": "#f1edec",
+              "outline": "#717786",
+              "tertiary-container": "#14827c",
+              "primary-fixed-dim": "#adc6ff",
+              "on-primary-container": "#fefcff",
+              "primary": "#0058bc",
+              "on-primary": "#ffffff",
+              "surface": "#fdf8f8",
+              "tertiary": "#006763",
+              "surface-bright": "#fdf8f8",
+              "on-tertiary-container": "#f3fffd",
+              "primary-container": "#0070eb",
+              "on-secondary-container": "#666464",
+              "error": "#ba1a1a",
+              "inverse-surface": "#313030",
+              "secondary-fixed-dim": "#c9c6c5",
+              "surface-container-low": "#f7f2f2",
+              "inverse-on-surface": "#f4f0ef",
+              "secondary": "#605e5e",
+              "surface-tint": "#005bc1",
+              "on-secondary-fixed-variant": "#484646",
+              "tertiary-fixed": "#96f3eb",
+              "on-tertiary-fixed": "#00201e",
+              "surface-container-high": "#ece7e7",
+              "on-tertiary-fixed-variant": "#00504c",
+              "surface-variant": "#e6e1e1",
+              "error-container": "#ffdad6",
+              "primary-fixed": "#d8e2ff",
+              "on-tertiary": "#ffffff",
+              "inverse-primary": "#adc6ff",
+              "on-error": "#ffffff",
+              "on-secondary-fixed": "#1c1b1b",
+              "on-surface-variant": "#414755",
+              "on-error-container": "#93000a"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bg-glass {
+            background: rgba(253, 248, 248, 0.8);
+            backdrop-filter: blur(20px);
+        }
+        .primary-gradient {
+            background: linear-gradient(135deg, #0058bc 0%, #0070eb 100%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface font-body text-on-surface selection:bg-primary-fixed antialiased">
+<!-- Top Navigation Anchor (Shared Component Mapping) -->
+<header class="bg-[#fdf8f8]/80 backdrop-blur-3xl sticky top-0 z-50 flex justify-between items-center px-6 py-4 w-full shadow-sm">
+<div class="flex items-center gap-3">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-on-surface">arrow_back</span>
+</button>
+<span class="font-manrope font-extrabold text-[#1c1b1b] tracking-tight text-2xl">Midpoint</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-primary hover:bg-surface-container-low p-2 rounded-full transition-colors">share</button>
+<div class="w-10 h-10 rounded-full bg-surface-container-highest overflow-hidden">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="User profile portrait photo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAeViSDYGNm9YswLG1jD_5mODMfVvdUtSFPxfbwh9uhuWvyg7KQO7IZWgXOo77_lrWGIv9591ZM0Cr8Yx8WBjGQokOufbkOb1sfAAkBNMMKSiLAeSrp2lOwDEFoxplbmAGl5UouObJ_-p4eR_1PE99vt4eW3GPrh9waEQAVsUus6B8UUfz7DdTAclaO-XcOhM0t04prib4q4bw8DuxiIESVayKT4qTnuuZdLYYTfDMREWOiAatk9Gyj1fdQUlga_AIE8f_NIq6QClo"/>
+</div>
+</div>
+</header>
+<main class="pb-32">
+<!-- Hero Section -->
+<section class="relative h-[397px] w-full overflow-hidden">
+<img alt="Mikkeller Bar interior" class="w-full h-full object-cover" data-alt="Modern craft beer bar interior with minimalist design" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBkE69ylGM5U3kqHn-noAoEYjJhp5dyYQu2MdluouHIpHIMJZgYjJtDGcPMiTV0UyBSSVGPbBuqr7SE6B-9EIVWgT7oLYaB8hUrDzt_G_ccMzyWX7mzIRXzxXoRimveJFPLlfROajWnODeXM6spnxK_2ETuKDb8oMYz3smKN_g3sw_d__ColkmR_FkzQAYEathu3sNQesyZdItsyVk4bTHXZPBG9D4xnf6NlEJ0Kxry_1Wyxby_W4R3cQhCF9zIPAmVmhlUeyrw0ss"/>
+<div class="absolute inset-0 bg-gradient-to-t from-on-surface/60 to-transparent opacity-40"></div>
+<div class="absolute bottom-6 left-6 right-6 flex justify-between items-end">
+<div class="px-4 py-2 bg-glass rounded-full flex items-center gap-2 shadow-sm">
+<span class="material-symbols-outlined text-[#006763]" style="font-variation-settings: 'FILL' 1;">verified</span>
+<span class="text-xs font-bold uppercase tracking-widest text-[#006763]">Premium Partner</span>
+</div>
+</div>
+</section>
+<!-- Venue Content -->
+<div class="px-6 -mt-8 relative z-10">
+<div class="bg-surface-container-lowest rounded-xl p-6 shadow-xl shadow-on-surface/5">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h1 class="font-headline font-extrabold text-3xl text-on-surface tracking-tight mb-2">Mikkeller Bar</h1>
+<div class="flex items-center gap-3 flex-wrap">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[#FFD700]" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-sm font-bold">4.8</span>
+</div>
+<span class="text-outline">•</span>
+<span class="text-sm font-medium text-secondary">$$</span>
+<span class="text-outline">•</span>
+<span class="text-sm font-medium text-secondary">Craft Beer &amp; Nordic Bites</span>
+</div>
+</div>
+</div>
+<div class="flex flex-wrap gap-2 mb-6">
+<span class="px-3 py-1 bg-surface-container-low text-on-surface-variant text-xs font-semibold rounded-full">Good for groups</span>
+<span class="px-3 py-1 bg-surface-container-low text-on-surface-variant text-xs font-semibold rounded-full">Open late</span>
+<span class="px-3 py-1 bg-surface-container-low text-on-surface-variant text-xs font-semibold rounded-full">Outdoor seating</span>
+</div>
+<p class="text-on-surface-variant leading-relaxed text-sm mb-6">
+                    A destination for beer lovers worldwide. This location pairs minimalist Danish design with an ever-rotating selection of world-class craft brews and artisanal snacks.
+                </p>
+<!-- Location Snippet -->
+<div class="rounded-xl overflow-hidden bg-surface-container-low relative h-32 mb-4">
+<img alt="Map location" class="w-full h-full object-cover opacity-50 grayscale" data-alt="Stylized minimalist city map view" data-location="Copenhagen" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhd_zBxohQZBFMg3z5pUAKdmiEKmvrV8Aig5-8ghQl6fQOuSs4PUnWCifyNuZhCZ4nKe9SlGIIqK40OAo0QFd3DLE3auDWoZR6dnD0ELoPivr104l21dH7oMREx8JMGNOEbzVA1O8K_mN4eRcJ1ssiivskikUI7CMceyHUVrDqIGTlqOo-_vEf8v30KXxtQs8ba3RyPSKQEhKynsxNLWyKXmy_y9fTC_7qgw608xfKQaH9e4CYz7AOTK0u2bTfd95cWc6AdSd_Sfs"/>
+<div class="absolute inset-0 flex items-center justify-center">
+<div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-lg border-2 border-surface-container-lowest">
+<span class="material-symbols-outlined text-white text-sm" style="font-variation-settings: 'FILL' 1;">location_on</span>
+</div>
+</div>
+<div class="absolute bottom-2 left-3 bg-glass px-3 py-1.5 rounded-lg">
+<span class="text-[10px] font-bold text-on-surface">Viktoriagade 8, 1655 Copenhagen</span>
+</div>
+</div>
+</div>
+<!-- Group Arrival - Bento Style -->
+<section class="mt-8">
+<h2 class="font-headline font-bold text-xl mb-4 px-1">Travel Times for Group</h2>
+<div class="grid grid-cols-1 gap-3">
+<!-- Alex (Arrived) -->
+<div class="bg-surface-container-lowest p-4 rounded-xl flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-4">
+<div class="relative">
+<img class="w-12 h-12 rounded-full object-cover" data-alt="Alex's profile photo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB46pbx5irU8rlF2vT-2XlMn_zpBYY3nRz5pZ_Fr4B0dlY1CrzGfdmlq7u78pCmlTy5SGvxtQ8pH2JDnRpjSyvn_1Ou56b-1VrrfM8pq2AlsSoBMNVKhjef2VKJInSMBlr_CDzzwy2y-DXxbbm1hArKb9nV4RMu4uRw6DkL_JTx4JwLlnoRBN5WzFM98517cI0M9NNJzmpVO-duDOXA8M0PvEHIja8rcRZ47ytYQPUrpAk8Stg6tPUFFzckrUUvgxujxeAyJRj3dGM"/>
+<div class="absolute -bottom-1 -right-1 w-5 h-5 bg-tertiary rounded-full border-2 border-surface-container-lowest flex items-center justify-center">
+<span class="material-symbols-outlined text-[12px] text-white">check</span>
+</div>
+</div>
+<div>
+<h3 class="font-bold text-sm">Alex</h3>
+<p class="text-xs text-on-surface-variant">Arrived 5m ago</p>
+</div>
+</div>
+<span class="px-3 py-1 bg-tertiary-fixed text-on-tertiary-fixed text-[10px] font-bold rounded-full uppercase tracking-tighter">Arrived</span>
+</div>
+<!-- Tom (On the Way) -->
+<div class="bg-surface-container-lowest p-4 rounded-xl flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-4">
+<div class="relative">
+<img class="w-12 h-12 rounded-full object-cover" data-alt="Tom's profile photo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCpfs0qiT5KaoXitQofGsKvVwPN57SPU39hCFpE3hCKlrbpDyqg5eXEylILuF3uFzNVft3q5faH0IzmcKa1WdZXyu49oByfaYDrvLThCzAFofvSz2uxEyQLr3XJFA3BZkLnFbImOa1RtRR-rHPUjGnjTZe0cdvr_eHjEZPPbyt_9nzPE2lr-JjoBdv1N-gPauZCxzkcZrOFawPC_sf6LV_eI9G3MlZgv1EpX-6XMRVMhV-NS81WjHhAX0PIG13HqHW4r8DF2opnpRs"/>
+</div>
+<div>
+<h3 class="font-bold text-sm">Tom</h3>
+<p class="text-xs text-on-surface-variant">Cycling • 8 min away</p>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-primary font-bold text-sm">19:42</span>
+<span class="text-[10px] text-outline uppercase font-bold tracking-tighter">ETA</span>
+</div>
+</div>
+<!-- Sarah (Late) -->
+<div class="bg-surface-container-lowest p-4 rounded-xl flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-4">
+<div class="relative">
+<img class="w-12 h-12 rounded-full object-cover" data-alt="Sarah's profile photo" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCGr4SBMBbi1Zeiqgog59bWqLWqIEeFINPqnndoUM-cWQEuGKHocWuqoZ0nBzZccjFReQev7DQP_sAPwHeB0CF734_EYikKQpZ1_J_yxBE_YH0-xD2YjyEYnnLa83BD0SX25giXV1BQzAk5PX6fXQrBzr6ERWe24KYq-Geb_4TYOaIT8Wu08-cN3Mg2LuS6z-HmMKSi805ucAgDm0zaf0ULBiDAIcpr5Tsnv-NwDaarpbgnhgohldQt4wuH_F1LexFcxcVJk5Wafic"/>
+</div>
+<div>
+<h3 class="font-bold text-sm">Sarah</h3>
+<p class="text-xs text-on-surface-variant">Transit • Heavy traffic</p>
+</div>
+</div>
+<span class="px-3 py-1 bg-error-container text-on-error-container text-[10px] font-bold rounded-full uppercase tracking-tighter">12m Late</span>
+</div>
+</div>
+</section>
+<!-- Reviews Summary (Editorial Touch) -->
+<section class="mt-8 px-1">
+<h2 class="font-headline font-bold text-xl mb-4">What guests say</h2>
+<div class="bg-surface-container-low p-6 rounded-xl border border-outline-variant/10">
+<p class="italic text-on-surface/80 leading-relaxed mb-4">"The atmosphere is unmatched for a group meetup. Despite being busy, the flow of the space feels curated and never cramped."</p>
+<div class="flex items-center gap-2">
+<div class="flex -space-x-2">
+<img class="w-6 h-6 rounded-full border-2 border-surface-container-low" data-alt="Reviewer avatar 1" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBE4o6ZoMwS81LN8EyVkl1f8cJciHoelbZil5ZSSsFgpE15UGXp56hTlDQod1yD09xyG0CaGdpWZ3VDTYNOecTgst_Qj84m2iV3Y9I3n1dfQxTtcIc6u2TAh04WCtkK-owrvObnpO3YKBuGA3ee5d1CN8Iaapp6axLc_RMMRNDMG8qAGEmjpXxOP5skDqrOFcgHi2AqD9eh7UQ-uzePkOb0txWXbPVwrn0PSX-GxkaQN5OK73AhI-W2iIiBMmQ1IbWwOP3UiCdOwJ0"/>
+<img class="w-6 h-6 rounded-full border-2 border-surface-container-low" data-alt="Reviewer avatar 2" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAqhneehrZUoJSyPAkJQz5RknXHZzVDTdepQcAttlYsB3HafC8jElNJml1NLo7ERBC2WkiuGzP63ODFCaHFhhKgVj_RmvB_s-xXqssj4P-3fLnC94ZBidROx6iCQ7QF74V0Gg3EHUMutaiWM0CtfZQMDZkCPhB8qDaPRT8p-NSLjJNSF56OpPZGpkmnuowo-D373UxkgSXPVBmWQEjfopcYf-CNh6OL0yqkCnPKi0Kpb1QPjaqtrz-0dwAcb_zLYk-8XZOb3j-wgdE"/>
+</div>
+<span class="text-xs font-bold text-on-surface-variant">+420 local reviews</span>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Floating Action Shell -->
+<div class="fixed bottom-0 left-0 w-full z-50 px-6 pb-8 pt-4 bg-gradient-to-t from-surface via-surface to-transparent">
+<div class="flex flex-col gap-3 max-w-2xl mx-auto">
+<button class="primary-gradient text-on-primary py-4 rounded-xl font-headline font-bold text-lg shadow-xl shadow-primary/20 active:scale-95 transition-transform">
+                Choose this place
+            </button>
+<button class="bg-surface-container-highest text-on-surface py-4 rounded-xl font-headline font-bold text-lg active:scale-95 transition-transform flex items-center justify-center gap-2">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">bookmark</span>
+                Save venue
+            </button>
+</div>
+</div>
+<!-- Hidden Navigation Suppressed per Task Focused View (Linear journey from search to detail) -->
+<!-- The BottomNavBar and FAB are suppressed as this is a focused detail view with specific CTAs -->
+</body></html>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-container-lowest": "#ffffff",
+              "secondary-fixed": "#e6e1e1",
+              "background": "#fdf8f8",
+              "tertiary-fixed-dim": "#79d6cf",
+              "surface-container-highest": "#e6e1e1",
+              "outline-variant": "#c1c6d7",
+              "on-secondary": "#ffffff",
+              "on-surface": "#1c1b1b",
+              "on-background": "#1c1b1b",
+              "on-primary-fixed-variant": "#004493",
+              "on-primary-fixed": "#001a41",
+              "surface-dim": "#ddd9d8",
+              "secondary-container": "#e6e1e1",
+              "surface-container": "#f1edec",
+              "outline": "#717786",
+              "tertiary-container": "#14827c",
+              "primary-fixed-dim": "#adc6ff",
+              "on-primary-container": "#fefcff",
+              "primary": "#0058bc",
+              "on-primary": "#ffffff",
+              "surface": "#fdf8f8",
+              "tertiary": "#006763",
+              "surface-bright": "#fdf8f8",
+              "on-tertiary-container": "#f3fffd",
+              "primary-container": "#0070eb",
+              "on-secondary-container": "#666464",
+              "error": "#ba1a1a",
+              "inverse-surface": "#313030",
+              "secondary-fixed-dim": "#c9c6c5",
+              "surface-container-low": "#f7f2f2",
+              "inverse-on-surface": "#f4f0ef",
+              "secondary": "#605e5e",
+              "surface-tint": "#005bc1",
+              "on-secondary-fixed-variant": "#484646",
+              "tertiary-fixed": "#96f3eb",
+              "on-tertiary-fixed": "#00201e",
+              "surface-container-high": "#ece7e7",
+              "on-tertiary-fixed-variant": "#00504c",
+              "surface-variant": "#e6e1e1",
+              "error-container": "#ffdad6",
+              "primary-fixed": "#d8e2ff",
+              "on-tertiary": "#ffffff",
+              "inverse-primary": "#adc6ff",
+              "on-error": "#ffffff",
+              "on-secondary-fixed": "#1c1b1b",
+              "on-surface-variant": "#414755",
+              "on-error-container": "#93000a"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      ::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface font-body text-on-surface">
+<!-- Top Navigation -->
+<header class="bg-[#fdf8f8]/80 dark:bg-[#1c1b1b]/80 backdrop-blur-3xl fixed top-0 w-full z-50 flex justify-between items-center px-6 py-4 ambient-shadow shadow-sm dark:shadow-none">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#007AFF]" data-icon="explore">explore</span>
+<span class="font-manrope font-extrabold text-[#1c1b1b] dark:text-[#fdf8f8] tracking-tight text-2xl">Midpoint</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden md:flex items-center gap-6">
+<a class="text-[#007AFF] font-bold text-sm" href="#">Home</a>
+<a class="text-[#1c1b1b]/60 dark:text-[#fdf8f8]/60 text-sm hover:bg-[#f7f2f2] transition-colors p-2 rounded-lg" href="#">Sessions</a>
+<a class="text-[#1c1b1b]/60 dark:text-[#fdf8f8]/60 text-sm hover:bg-[#f7f2f2] transition-colors p-2 rounded-lg" href="#">Saved</a>
+</div>
+<img alt="Profile" class="w-8 h-8 rounded-full border-2 border-surface-container-highest" data-alt="User profile avatar close up" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDk0vC67a4dWyBRQVJ3M7mLxv5yI79T7Qu6ploWJ93fOHZae6uyFIrm72DY8h6BomVbGlbFsN13JH4g5ZMTPvxYBqqcP74VIfb2AiilHgQ5vSnLNl_eAX6PMb_sraHYOuUgdSyF320wkr9zq-KVRaCyH_s0GJ6eI1WT90LWztCmKQGAwYNN6JQv5vk-Xz4GBu_ZSbWAvl9KjsR4PNGuGpQXy27b4VgNp_w_HpWRAI_EyBc5H2IgvdWNzN6Qpb0XXPgwUj3mQ6BxDKA"/>
+</div>
+</header>
+<main class="pt-24 pb-32 px-4 md:px-8 max-w-7xl mx-auto">
+<!-- Comparison Header -->
+<section class="mb-10 text-center md:text-left">
+<h1 class="font-headline font-bold text-3xl md:text-4xl text-on-surface tracking-tight mb-2">Venue Comparison</h1>
+<p class="text-on-surface-variant font-body text-base">Comparing top-rated midpoints for your session.</p>
+</section>
+<!-- Bento Comparison Grid -->
+<div class="overflow-x-auto no-scrollbar pb-6">
+<div class="flex md:grid md:grid-cols-3 gap-6 min-w-[900px] md:min-w-full">
+<!-- Venue Card 1: The Coffee Collective -->
+<article class="flex-1 bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/15 flex flex-col gap-6 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-3">
+<span class="bg-tertiary-fixed text-on-tertiary-fixed text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full">Best for Fairness</span>
+</div>
+<div class="flex flex-col gap-4">
+<img alt="The Coffee Collective" class="w-full h-40 object-cover rounded-xl" data-alt="Modern minimalist specialty coffee shop interior" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCbxhZq2nmMHuQdjwsX8BfHtjT715Ffg_XjCEnONRmnvdnUWlbLiYHdATXyy-B77T5w0m6FjrhcGShqBw1S94W-6DsnESO04Z61p57P-e2DTXD0uL_z4jcWPiiQCjX6W4HQ63z8K1jpRMhIAVzrcpwFmIFv5Jh9PK7h67VFWoziwaG5lBM7QKhHDQE7iiQKRk_ahNSN4A_ZOKOkj_gNNOkPWVCO3HXMmFi4gCXkQeGRiqkF2iYr7_yYDH_qh5ZDS0L9gyO87m6daBw"/>
+<div>
+<h2 class="font-headline font-bold text-xl text-on-surface">The Coffee Collective</h2>
+<p class="text-on-surface-variant text-sm font-medium">Artisanal Bakery &amp; Coffee</p>
+</div>
+</div>
+<div class="space-y-6">
+<!-- Metric: Fairness -->
+<div class="bg-surface-container-low p-4 rounded-xl">
+<div class="flex justify-between items-end mb-2">
+<span class="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Fairness Score</span>
+<span class="text-tertiary font-bold text-2xl">96%</span>
+</div>
+<div class="h-1.5 w-full bg-tertiary-container/20 rounded-full overflow-hidden">
+<div class="h-full bg-tertiary rounded-full" style="width: 96%"></div>
+</div>
+</div>
+<!-- Travel & Price -->
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-surface-container-low p-4 rounded-xl flex flex-col gap-1">
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Travel Time</span>
+<span class="text-lg font-bold text-on-surface">14m</span>
+</div>
+<div class="bg-surface-container-low p-4 rounded-xl flex flex-col gap-1">
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Price Range</span>
+<span class="text-lg font-bold text-primary">$$$</span>
+</div>
+</div>
+<button class="w-full py-4 bg-gradient-to-br from-primary to-primary-container text-on-primary font-bold rounded-xl text-sm transition-transform active:scale-95 shadow-md">Select Venue</button>
+</div>
+</article>
+<!-- Venue Card 2: Noma Garden -->
+<article class="flex-1 bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/15 flex flex-col gap-6 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-3">
+<span class="bg-primary-fixed text-on-primary-fixed-variant text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full">Best for Atmosphere</span>
+</div>
+<div class="flex flex-col gap-4">
+<img alt="Noma Garden" class="w-full h-40 object-cover rounded-xl" data-alt="Lush outdoor garden restaurant with wooden tables" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCIQ8DNiIddQvPfErNWuYW_8RZPDxkzwZ4lpT9Sy5n9XphgMLTD3b3yRqCAqx6gOWsDxQ6oR5CjieSlGiOxai7pdDuCAc9UG6XiKO39lSNTeS3jkgXUx9VvaXfT4SrdIDJ4ngfsag_fQwCu2FOXWC_F1lX5OyoJqQbnaY_ADn0wtlPKTWeHWL4AeUephosaLFKA36QuPGjlINKLrzaVIgIiswyxhqsy7hRbZI8wEueEXWWGw5hWeBM38yZ5nvxxjJenRcM5fZFvOFc"/>
+<div>
+<h2 class="font-headline font-bold text-xl text-on-surface">Noma Garden</h2>
+<p class="text-on-surface-variant text-sm font-medium">Botanical Dining</p>
+</div>
+</div>
+<div class="space-y-6">
+<!-- Metric: Fairness -->
+<div class="bg-surface-container-low p-4 rounded-xl">
+<div class="flex justify-between items-end mb-2">
+<span class="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Fairness Score</span>
+<span class="text-tertiary font-bold text-2xl">91%</span>
+</div>
+<div class="h-1.5 w-full bg-tertiary-container/20 rounded-full overflow-hidden">
+<div class="h-full bg-tertiary rounded-full" style="width: 91%"></div>
+</div>
+</div>
+<!-- Travel & Price -->
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-surface-container-low p-4 rounded-xl flex flex-col gap-1">
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Travel Time</span>
+<span class="text-lg font-bold text-on-surface">22m</span>
+</div>
+<div class="bg-surface-container-low p-4 rounded-xl flex flex-col gap-1">
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Price Range</span>
+<span class="text-lg font-bold text-primary">$$$$</span>
+</div>
+</div>
+<button class="w-full py-4 bg-surface-container-highest text-on-surface font-bold rounded-xl text-sm transition-transform active:scale-95">Select Venue</button>
+</div>
+</article>
+<!-- Venue Card 3: Prolog -->
+<article class="flex-1 bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/15 flex flex-col gap-6 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-3">
+<span class="bg-secondary-container text-on-secondary-container text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full">Best for Price</span>
+</div>
+<div class="flex flex-col gap-4">
+<img alt="Prolog" class="w-full h-40 object-cover rounded-xl" data-alt="Industrial chic urban cafe with large windows" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAtfTeLvKA4ZogRJgTM2AaPp4DLRB59aDsV7XgLOI2fkbaNxYLqAQbSkwszWfp4i1SR1FE0kKC9jPd20hCqkz0LULjYRg1DYGD4kiJhJJJ4Ia0hugMU9vrGBQr6ETuA5yhVm7k9IJ_BdoeKOH-mrhcaVtxvQi9IprF0HaYfCJ11Km1xQUHSC529Ung-0Fha5bws2ztMu6hT5BRjQS0mnMJZpgpcmIAYCnM1Uhw-EibyhcpFaEWNW_xnUaj9esCSrb0ZREVOLvnLd9I"/>
+<div>
+<h2 class="font-headline font-bold text-xl text-on-surface">Prolog</h2>
+<p class="text-on-surface-variant text-sm font-medium">Coffee &amp; Community</p>
+</div>
+</div>
+<div class="space-y-6">
+<!-- Metric: Fairness -->
+<div class="bg-surface-container-low p-4 rounded-xl">
+<div class="flex justify-between items-end mb-2">
+<span class="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Fairness Score</span>
+<span class="text-tertiary font-bold text-2xl">84%</span>
+</div>
+<div class="h-1.5 w-full bg-tertiary-container/20 rounded-full overflow-hidden">
+<div class="h-full bg-tertiary rounded-full" style="width: 84%"></div>
+</div>
+</div>
+<!-- Travel & Price -->
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-surface-container-low p-4 rounded-xl flex flex-col gap-1">
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Travel Time</span>
+<span class="text-lg font-bold text-on-surface">18m</span>
+</div>
+<div class="bg-surface-container-low p-4 rounded-xl flex flex-col gap-1">
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Price Range</span>
+<span class="text-lg font-bold text-primary">$$</span>
+</div>
+</div>
+<button class="w-full py-4 bg-surface-container-highest text-on-surface font-bold rounded-xl text-sm transition-transform active:scale-95">Select Venue</button>
+</div>
+</article>
+</div>
+</div>
+<!-- Comparative Insights -->
+<section class="mt-12 bg-surface-container-low rounded-2xl p-8 border border-outline-variant/10">
+<h3 class="font-headline font-bold text-xl mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="lightbulb">lightbulb</span>
+                Quick Insight
+            </h3>
+<div class="grid md:grid-cols-2 gap-8">
+<div class="flex gap-4">
+<div class="bg-tertiary-fixed w-12 h-12 rounded-full flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-on-tertiary-fixed" data-icon="balance">balance</span>
+</div>
+<div>
+<h4 class="font-bold text-on-surface mb-1">Most Equitable</h4>
+<p class="text-sm text-on-surface-variant leading-relaxed">The Coffee Collective offers the most balanced travel time for all participants with a 96% fairness score.</p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="bg-primary-fixed w-12 h-12 rounded-full flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-on-primary-fixed-variant" data-icon="speed">speed</span>
+</div>
+<div>
+<h4 class="font-bold text-on-surface mb-1">Fastest Commute</h4>
+<p class="text-sm text-on-surface-variant leading-relaxed">Average travel time is minimized by choosing The Coffee Collective (14m avg).</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Bar (Mobile) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-8 pt-4 bg-[#fdf8f8]/85 dark:bg-[#1c1b1b]/85 backdrop-blur-2xl shadow-[0_-4px_24px_rgba(0,0,0,0.04)] rounded-t-[1.5rem]">
+<a class="flex flex-col items-center justify-center text-[#1c1b1b]/40 dark:text-[#fdf8f8]/40 hover:text-[#007AFF]/80" href="#">
+<span class="material-symbols-outlined" data-icon="home_pin">home_pin</span>
+<span class="font-inter font-medium text-[10px] uppercase tracking-wider mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#007AFF] after:content-[''] after:w-1 after:h-1 after:bg-[#007AFF] after:rounded-full after:mt-1" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-inter font-medium text-[10px] uppercase tracking-wider mt-1">Sessions</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#1c1b1b]/40 dark:text-[#fdf8f8]/40 hover:text-[#007AFF]/80" href="#">
+<span class="material-symbols-outlined" data-icon="bookmark">bookmark</span>
+<span class="font-inter font-medium text-[10px] uppercase tracking-wider mt-1">Saved</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#1c1b1b]/40 dark:text-[#fdf8f8]/40 hover:text-[#007AFF]/80" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-inter font-medium text-[10px] uppercase tracking-wider mt-1">Profile</span>
+</a>
+</nav>
+</body></html>

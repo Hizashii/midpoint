@@ -20,12 +20,29 @@ export default function Root({ children }: { children: React.ReactNode }) {
 
         {/* Using raw CSS styles as an escape-hatch to ensure the background color never flickers in dark-mode. */}
         <style dangerouslySetInnerHTML={{ __html: responsiveBackground }} />
-        {/* Add any additional <head> elements that you want globally available on web... */}
+        
+        {/* Load Google Fonts directly for Web to avoid JS loader timeouts */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet" />
+        
+        <style dangerouslySetInnerHTML={{ __html: customWebStyles }} />
       </head>
       <body>{children}</body>
     </html>
   );
 }
+
+const customWebStyles = `
+  /* Fallback for icons and local fonts */
+  @font-face {
+    font-family: 'SpaceMono';
+    src: url('/assets/fonts/SpaceMono-Regular.ttf');
+  }
+  * {
+    font-variant-ligatures: none;
+  }
+`;
 
 const responsiveBackground = `
 body {

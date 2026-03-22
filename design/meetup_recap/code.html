@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Meetup Recap | Midpoint</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-container-lowest": "#ffffff",
+              "secondary-fixed": "#e6e1e1",
+              "background": "#fdf8f8",
+              "tertiary-fixed-dim": "#79d6cf",
+              "surface-container-highest": "#e6e1e1",
+              "outline-variant": "#c1c6d7",
+              "on-secondary": "#ffffff",
+              "on-surface": "#1c1b1b",
+              "on-background": "#1c1b1b",
+              "on-primary-fixed-variant": "#004493",
+              "on-primary-fixed": "#001a41",
+              "surface-dim": "#ddd9d8",
+              "secondary-container": "#e6e1e1",
+              "surface-container": "#f1edec",
+              "outline": "#717786",
+              "tertiary-container": "#14827c",
+              "primary-fixed-dim": "#adc6ff",
+              "on-primary-container": "#fefcff",
+              "primary": "#0058bc",
+              "on-primary": "#ffffff",
+              "surface": "#fdf8f8",
+              "tertiary": "#006763",
+              "surface-bright": "#fdf8f8",
+              "on-tertiary-container": "#f3fffd",
+              "primary-container": "#0070eb",
+              "on-secondary-container": "#666464",
+              "error": "#ba1a1a",
+              "inverse-surface": "#313030",
+              "secondary-fixed-dim": "#c9c6c5",
+              "surface-container-low": "#f7f2f2",
+              "inverse-on-surface": "#f4f0ef",
+              "secondary": "#605e5e",
+              "surface-tint": "#005bc1",
+              "on-secondary-fixed-variant": "#484646",
+              "tertiary-fixed": "#96f3eb",
+              "on-tertiary-fixed": "#00201e",
+              "surface-container-high": "#ece7e7",
+              "on-tertiary-fixed-variant": "#00504c",
+              "surface-variant": "#e6e1e1",
+              "error-container": "#ffdad6",
+              "primary-fixed": "#d8e2ff",
+              "on-tertiary": "#ffffff",
+              "inverse-primary": "#adc6ff",
+              "on-error": "#ffffff",
+              "on-secondary-fixed": "#1c1b1b",
+              "on-surface-variant": "#414755",
+              "on-error-container": "#93000a"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bg-glass {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .hero-gradient {
+            background: linear-gradient(135deg, rgba(0, 88, 188, 0.05) 0%, rgba(0, 112, 235, 0.02) 100%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body selection:bg-primary/20">
+<!-- Top Navigation (Shell Implementation) -->
+<header class="fixed top-0 w-full z-50 bg-[#fdf8f8]/80 backdrop-blur-3xl flex justify-between items-center px-6 py-4 ambient-shadow shadow-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#007AFF]">explore</span>
+<span class="font-manrope font-extrabold text-[#1c1b1b] tracking-tight text-xl">Midpoint</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden md:flex items-center gap-6">
+<a class="text-[#1c1b1b]/60 font-inter text-sm hover:text-[#007AFF] transition-colors" href="#">Home</a>
+<a class="text-[#007AFF] font-bold font-inter text-sm" href="#">Sessions</a>
+<a class="text-[#1c1b1b]/60 font-inter text-sm hover:text-[#007AFF] transition-colors" href="#">Saved</a>
+</div>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest overflow-hidden border border-outline-variant/20">
+<img class="w-full h-full object-cover" data-alt="User profile avatar smiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC73e1Wk74uvoUl1v5erYYAK5lne7BHHTc9ekTUSV02CCwv-MdYeFe0AEAZLkc7qe14pHJNEGb_tvjwDr9mGQ4d2Zka-zRYtoKSMgfxHst8o4KaXIIEKA8QRPmYLuj6B2krrLeKCraj3whltLS7qGc1VoavQ8lgm8UT5Cwz7VG5Wmk1uWXXUAaEnX76diYHwtNqhD1Mxt1ZInFqgPp-dMTrcubgUz4d2uuGbkENKr6HaedA_Id2vTWMk_bNn5U3b92SZgSfc4pyFBE"/>
+</div>
+</div>
+</header>
+<main class="pt-24 pb-32 max-w-5xl mx-auto px-6">
+<!-- Hero Section: Editorial Headline & Avatars -->
+<section class="mb-12 text-center md:text-left">
+<div class="inline-flex items-center gap-1 bg-tertiary-fixed text-on-tertiary-fixed px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest mb-4">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                Completed Session
+            </div>
+<h1 class="font-headline font-extrabold text-4xl md:text-6xl text-on-surface mb-8 tracking-tight leading-[1.1]">
+                Good times at <span class="text-primary">Mikkeller Bar</span>
+</h1>
+<div class="flex flex-col md:flex-row md:items-center gap-8">
+<!-- Avatar Collage -->
+<div class="flex -space-x-4">
+<div class="w-16 h-16 rounded-full border-4 border-surface overflow-hidden shadow-sm">
+<img class="w-full h-full object-cover" data-alt="Participant Sarah smiling outdoors" src="https://lh3.googleusercontent.com/aida-public/AB6AXuACYO9GKGppt06mmSb0nIEkGKytyxEKhOWERXkaR5o-1SiMso3nkUXdnsQVmji-xaqPMpXtM20lIptyyrYHJl2xyawA8VuC5cXB1phKznEhWWVIz81oyTZ5ueDO0ba9eCwoYQ9AFO8j-nKtejeb9GatuJc42PAZQ54MraouA6LvnruWk7OhMijRjR9egG5dPjFaUVlL3nRO94MPVh5d7AZuFTUETcJZTeCbq0GC-yg1tk64OmOeWDuU93w3A2z8At3gyvNhFEi0tC0"/>
+</div>
+<div class="w-16 h-16 rounded-full border-4 border-surface overflow-hidden shadow-sm">
+<img class="w-full h-full object-cover" data-alt="Participant James portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJFaptQSHtxSwnciVhfm820pNjyH_-aHvmD-7q9zFQTcljYnf4_5f4RY9GJc4PEpQae_mwUwA-U18b7uXo3dW2sDmZfwpoHnjKyyCTtQzMO7o2ugMuZmzfYJnyJ492GT8yiCIkjAuSjpaM9fRyCSqdw6i6kfLhbFxE9KWApmggAOBvNiEccbVwPhQOcuGYkBriSB6ktNoAs_r97uDGL8VZC0eMZWPGiuDJCtnZ-D0QkjbNAsmX0zTI4R5TPLeRULaLi4AgKkI3zI0"/>
+</div>
+<div class="w-16 h-16 rounded-full border-4 border-surface overflow-hidden shadow-sm">
+<img class="w-full h-full object-cover" data-alt="Participant Elena looking confident" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA_TKu36VPVO2r0tDnC1zf0MxurULrWRugYuXcpK2lHuqYsVs9nBHfsseH4bOiLezFv3DmGEFnxF1gLwGDTYxz2Lqs9yvsYKafD-je-rytBZkzoxd2l_eMV3iwyTVhFw-6Xr4mLJKl5xuHx8tAO9ZP5tcXiojyPPG_qG74kcp4dm-RtLnS1E-VdQ64Xnc_tXFQpm3sARK1j4KuOKCTG8NMI0flR7sND79BXgWgm-0BTn_RGhPJ_8Sze1gSdy79c5FGSl0GVuD_rXNk"/>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="bg-surface-container-low px-6 py-3 rounded-2xl">
+<p class="text-[10px] uppercase font-bold tracking-widest text-on-surface/40 mb-1">Fairness</p>
+<p class="font-headline font-bold text-2xl text-tertiary">94%</p>
+</div>
+<div class="bg-surface-container-low px-6 py-3 rounded-2xl">
+<p class="text-[10px] uppercase font-bold tracking-widest text-on-surface/40 mb-1">Avg Travel</p>
+<p class="font-headline font-bold text-2xl text-on-surface">14m</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Bento Grid Insights -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6 mb-12">
+<!-- Venue Spotlight Card -->
+<div class="md:col-span-8 bg-surface-container-lowest rounded-[2rem] overflow-hidden shadow-sm group">
+<div class="relative h-64 w-full">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="Interior of Mikkeller Bar with craft beer taps" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCNDd2Y0soT06WyxnZtoq8-z3hyvAxFGxGS1KxWc54plVpN9WL6wQRO0uMt52FWAvUX7fjeu9S3eQi2y8XJkS-wbUIDlUZtZE4pdwmVC61713ymRT_TgQd3vdR3eCqGFs5m0-LNS-d0ZnLBiT2Q4I1a7P-Lw61v7pkSbqKNi4vohamcgiRgyBYedFM2vTM7ZMqz2zmO4hRd-xJdzXzsHTyc-oWjMJb5Dt8tm2hEHEU7XoGKyJSvCT_Vqsx3Tkh_5WFTQxbcRC2LKTI"/>
+<div class="absolute inset-0 bg-gradient-to-t from-on-surface/80 via-transparent to-transparent"></div>
+<div class="absolute bottom-6 left-6 text-white">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-sm">location_on</span>
+<span class="text-xs font-medium uppercase tracking-widest">Victoriagade, Copenhagen</span>
+</div>
+<h3 class="font-headline font-bold text-2xl">Mikkeller Bar</h3>
+</div>
+</div>
+<div class="p-8">
+<div class="flex justify-between items-center mb-6">
+<h4 class="font-headline font-bold text-lg">Travel Summary</h4>
+<div class="h-[1px] flex-grow mx-4 bg-outline-variant/20"></div>
+<span class="text-on-surface/40 text-sm">October 24, 2023</span>
+</div>
+<div class="space-y-6">
+<!-- Traveler 1 -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container/20">
+<img class="w-full h-full object-cover" data-alt="Sarah" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbIZ10YgXVtJWAYbjbRpd9GaJYQ6IEZ7LkHnWKV36tJZlH3g92OJ91QRKJzv0ZY6mT0c5UK86EGMwICpWMoGUn6knMiw8F8v2DE7Tp4vRv9dBunCdTOH4Umam_BqSbkeYN5k11jBTWXpySRZiMtFfSASVaaVt502JKxXQONlZcJ3cEh_Sm08DYpLq3ByveNwXiHls_5HfYXvCKFF7sOwr3OJj3Y4kRfHX4GfT0OQHI6FbDchQzOW63qvQOuAXtC-fh8tUMscPNqrQ"/>
+</div>
+<div>
+<p class="font-semibold text-on-surface">Sarah</p>
+<p class="text-xs text-on-surface/60">From Vesterbro</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-bold text-on-surface">12 min</p>
+<p class="text-[10px] text-tertiary font-bold uppercase">Walking</p>
+</div>
+</div>
+<!-- Traveler 2 -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container/20">
+<img class="w-full h-full object-cover" data-alt="James" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4-hP_TfQDs0qTJqXN_5pj2g2Q9bFkT3I4fjbJw3i_vznlX5TyTm17w7jgkNGaqgctUiXddQC1bTL_VB-nReMnG0JTFxNuMT1GPAwDvI5-Q8V3ETcQnHBn7EhbNytu0vXh7FB41JSDVHlUdr94uzkRt9jykUOY9vY-tf_sZeeuTGFXy-cwS0umxfM4fmB8g_OWwb60zMFajkeVgnYoHY_PHj7iElkk9hTajTPZlVT_QBlUM2OAVgWJkA-JmZknGE4rMBmWuHTkSUY"/>
+</div>
+<div>
+<p class="font-semibold text-on-surface">James</p>
+<p class="text-xs text-on-surface/60">From Nørrebro</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-bold text-on-surface">15 min</p>
+<p class="text-[10px] text-tertiary font-bold uppercase">Biking</p>
+</div>
+</div>
+<!-- Traveler 3 -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container/20">
+<img class="w-full h-full object-cover" data-alt="Elena" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8JuFhurGKOymKzCebHR6KBcb_47qb7hOV2zN4c7AnXX_VDzUqvq8hk22qmzLTOp6M-D0bR5Pa6sWj1oSReL2Ps0jRe8V7WNkTnJr3m5WSGzA2djQQHn95rpyx1jWAiB54CKMWBP-z3YUNorKdKSOhV6pzwZrWyGTtKOp56_WeUw13NT7Fmxm9flM9G7FyItAGoET8v4B6jc8NvO-zYIe2PiHXiOop8D_F__JJ1NJMiqQr81cCG2CC5aD7Q2yQ5jesfN7FMPBFfdc"/>
+</div>
+<div>
+<p class="font-semibold text-on-surface">Elena</p>
+<p class="text-xs text-on-surface/60">From Frederiksberg</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-bold text-on-surface">14 min</p>
+<p class="text-[10px] text-tertiary font-bold uppercase">Metro</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Fairness Visualization Card -->
+<div class="md:col-span-4 flex flex-col gap-6">
+<div class="bg-primary flex-grow rounded-[2rem] p-8 text-on-primary relative overflow-hidden flex flex-col justify-end">
+<div class="absolute -top-12 -right-12 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
+<span class="material-symbols-outlined text-4xl mb-4" style="font-variation-settings: 'FILL' 1;">balance</span>
+<h3 class="font-headline font-bold text-2xl mb-2 leading-tight">Elite Balance Achieved</h3>
+<p class="text-on-primary/70 text-sm leading-relaxed">The travel variance was less than 3 minutes between all participants. A truly fair midpoint.</p>
+</div>
+<div class="bg-surface-container-low rounded-[2rem] p-8 flex flex-col justify-center gap-4">
+<button class="w-full py-4 bg-gradient-to-br from-primary to-primary-container text-white font-bold rounded-xl shadow-lg hover:shadow-primary/20 transition-all flex items-center justify-center gap-2 group">
+<span class="material-symbols-outlined transition-transform group-hover:rotate-12">calendar_today</span>
+                        Rebook this spot
+                    </button>
+<button class="w-full py-4 bg-surface-container-lowest text-on-surface font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-white transition-colors">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">bookmark</span>
+                        Save to Favorites
+                    </button>
+</div>
+</div>
+</div>
+<!-- Footnote / Social Element -->
+<div class="flex flex-col md:flex-row items-center justify-between gap-6 py-12 border-t border-outline-variant/10">
+<div class="flex items-center gap-4">
+<div class="p-3 rounded-full bg-surface-container-high">
+<span class="material-symbols-outlined text-primary">share</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Share this memory</p>
+<p class="text-xs text-on-surface/50">Send the summary card to your group</p>
+</div>
+</div>
+<div class="flex gap-2">
+<div class="px-4 py-2 bg-surface-container-high rounded-full text-xs font-bold text-on-surface/60">#MidpointMemories</div>
+<div class="px-4 py-2 bg-surface-container-high rounded-full text-xs font-bold text-on-surface/60">Copenhagen</div>
+</div>
+</div>
+</main>
+<!-- Navigation Shell (Bottom Navigation for Mobile) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-8 pt-4 bg-[#fdf8f8]/85 backdrop-blur-2xl rounded-t-[1.5rem] shadow-[0_-4px_24px_rgba(0,0,0,0.04)]">
+<a class="flex flex-col items-center justify-center text-[#1c1b1b]/40" href="#">
+<span class="material-symbols-outlined">home_pin</span>
+<span class="font-inter font-medium text-[10px] uppercase tracking-wider mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#007AFF] after:content-[''] after:w-1 after:h-1 after:bg-[#007AFF] after:rounded-full after:mt-1" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">group</span>
+<span class="font-inter font-medium text-[10px] uppercase tracking-wider">Sessions</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#1c1b1b]/40" href="#">
+<span class="material-symbols-outlined">bookmark</span>
+<span class="font-inter font-medium text-[10px] uppercase tracking-wider mt-1">Saved</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#1c1b1b]/40" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-inter font-medium text-[10px] uppercase tracking-wider mt-1">Profile</span>
+</a>
+</nav>
+</body></html>
