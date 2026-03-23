@@ -7,6 +7,8 @@ export const colors = {
   "primary-container": "#0070eb",
   "on-primary-container": "#fefcff",
   "inverse-primary": "#adc6ff",
+  "primary-fixed": "#e3e9f5",
+  "on-primary-fixed-variant": "#1a2a4a",
 
   // Secondary: Tonal Grays
   secondary: "#605e5e",

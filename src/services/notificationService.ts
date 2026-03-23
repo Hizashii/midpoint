@@ -1,4 +1,5 @@
 import * as Notifications from 'expo-notifications';
+import { SchedulableTriggerInputTypes } from 'expo-notifications';
 import { Platform } from 'react-native';
 
 export const notificationService = {
@@ -41,7 +42,10 @@ export const notificationService = {
           body,
           data: { screen: 'session/leave-now' },
         },
-        trigger,
+        trigger: {
+          type: SchedulableTriggerInputTypes.DATE,
+          date: trigger,
+        },
       });
       return identifier;
     } catch (error) {

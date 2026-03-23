@@ -48,11 +48,19 @@ export default function SessionScreen() {
   const handleFindMidpoint = async () => {
     setIsCalculating(true);
     try {
-      const midpoint = optimizationService.calculateMidpoint(session.participants);
-      
+      const midpoint = optimizationService.calculateSearchCenter(session.participants);
+
       if (midpoint) {
-        const venues = await venueService.findVenues(midpoint.lat, midpoint.lng, session.type);
-        const scoredVenues = optimizationService.scoreVenues(venues, session.participants);
+        const venues = await venueService.findVenues(
+          midpoint.lat,
+          midpoint.lng,
+          session.preferences
+        );
+        const scoredVenues = await optimizationService.scoreVenues(
+          venues,
+          session.participants,
+          session.preferences
+        );
         useMeetupStore.getState().setVenueCandidates(scoredVenues);
         router.push(`/result/${session.id}`);
       } else {
@@ -72,7 +80,7 @@ export default function SessionScreen() {
       
       {/* Map Layer */}
       <View style={StyleSheet.absoluteFillObject}>
-        <MapView 
+        <MapView
           style={StyleSheet.absoluteFillObject}
           initialRegion={{
             latitude: session.participants.find(p => p.location)?.location?.lat || 55.4765,
@@ -88,7 +96,7 @@ export default function SessionScreen() {
                  coordinate={{ latitude: p.location.lat, longitude: p.location.lng }}
                >
                  <View style={styles.participantMarker}>
-                   <Image source={{ uri: p.profile.avatarUrl }} style={styles.markerAvatar} />
+                   <Image source={{ uri: p.profile?.avatarUrl || `https://i.pravatar.cc/150?u=${p.id}` }} style={styles.markerAvatar} />
                    <View style={[styles.statusDot, { backgroundColor: p.status === 'ready' ? colors.tertiary : colors.primary }]} />
                  </View>
                </Marker>
@@ -139,7 +147,7 @@ export default function SessionScreen() {
               <View key={participant.id} style={styles.participantRow}>
                 <View style={styles.participantLeft}>
                   <View style={styles.avatarContainer}>
-                    <Image source={{ uri: participant.profile.avatarUrl }} style={styles.participantAvatar} />
+                    <Image source={{ uri: participant.profile?.avatarUrl || `https://i.pravatar.cc/150?u=${participant.id}` }} style={styles.participantAvatar} />
                     {participant.location && (
                       <View style={styles.checkIcon}>
                         <MaterialIcons name="check" size={10} color="white" />
@@ -147,7 +155,7 @@ export default function SessionScreen() {
                     )}
                   </View>
                   <View>
-                    <Text style={styles.participantName}>{participant.profile.name}</Text>
+                    <Text style={styles.participantName}>{participant.profile?.name || participant.name || 'User'}</Text>
                     <Text style={styles.participantDetail}>
                       {participant.location ? 'Location shared' : 'Choosing origin...'}
                     </Text>
@@ -169,7 +177,7 @@ export default function SessionScreen() {
             ) : (
               <PrimaryButton 
                 title={isCalculating ? "Calculating Midpoint..." : "Optimize Midpoint"} 
-                icon={<MaterialCommunityIcons name="auto-awesome" size={24} color="white" />}
+                icon={<MaterialCommunityIcons name={'auto-awesome' as never} size={24} color="white" />}
                 onPress={handleFindMidpoint}
                 disabled={isCalculating || session.participants.filter(p => p.location).length === 0}
                 style={[styles.mainAction, session.participants.filter(p => p.location).length === 0 && { opacity: 0.5 }]}

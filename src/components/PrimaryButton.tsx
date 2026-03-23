@@ -1,14 +1,15 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, TouchableOpacityProps, View, Platform } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, TouchableOpacityProps, View, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, typography, radii, shadows } from '../lib/theme';
 
 interface PrimaryButtonProps extends TouchableOpacityProps {
   title: string;
   icon?: React.ReactNode;
+  loading?: boolean;
 }
 
-export const PrimaryButton = ({ title, icon, style, ...props }: PrimaryButtonProps) => {
+export const PrimaryButton = ({ title, icon, loading, style, ...props }: PrimaryButtonProps) => {
   return (
     <TouchableOpacity activeOpacity={0.85} style={[styles.container, style]} {...props}>
       <LinearGradient
@@ -18,7 +19,8 @@ export const PrimaryButton = ({ title, icon, style, ...props }: PrimaryButtonPro
         style={styles.gradient}
       >
         <View style={styles.content}>
-          {icon && <View style={styles.iconContainer}>{icon}</View>}
+          {loading && <ActivityIndicator color="white" style={styles.loadingIndicator} />}
+          {!loading && icon && <View style={styles.iconContainer}>{icon}</View>}
           <Text style={styles.text}>{title}</Text>
         </View>
       </LinearGradient>
@@ -44,6 +46,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconContainer: {
+    marginRight: 10,
+  },
+  loadingIndicator: {
     marginRight: 10,
   },
   text: {

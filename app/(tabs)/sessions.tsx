@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, ActivityIndicator, RefreshControl, Image } from 'react-native';
 import { colors, typography, spacing, radii, shadows } from '../../src/lib/theme';
 import { MeetupSessionCard } from '../../src/components/MeetupSessionCard';
 import { useAuthStore } from '../../src/store/authStore';
 import { meetupService } from '../../src/services/meetupService';
 import { MeetupSession } from '../../src/types';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { BlurView } from 'expo-blur';
 
 export default function SessionsScreen() {
   const [sessions, setSessions] = useState<MeetupSession[]>([]);
@@ -37,18 +38,23 @@ export default function SessionsScreen() {
     fetchSessions();
   };
 
-  const activeSessions = sessions.filter(s => s.status === 'active' || s.status === 'planning' || s.status === 'deciding');
-  const pastSessions = sessions.filter(s => s.status === 'completed');
+  // Modern states: waiting_for_participants, confirmed, completed
+  const activeSessions = sessions.filter(s => s.state !== 'completed');
+  const pastSessions = sessions.filter(s => s.state === 'completed');
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Your Meetups</Text>
+        <View>
+          <Text style={styles.title}>Your Meetups</Text>
+          <Text style={styles.subtitle}>{sessions.length} sessions total</Text>
+        </View>
         <TouchableOpacity 
           style={styles.addButton}
-          onPress={() => router.push('/meetup/create')}
+          activeOpacity={0.8}
+          onPress={() => router.push('/meetup/type')}
         >
-          <MaterialCommunityIcons name="plus" size={24} color="white" />
+          <MaterialCommunityIcons name="plus" size={28} color="white" />
         </TouchableOpacity>
       </View>
 
@@ -66,29 +72,30 @@ export default function SessionsScreen() {
         ) : sessions.length === 0 ? (
           <View style={styles.emptyState}>
             <View style={styles.emptyIconContainer}>
-              <MaterialCommunityIcons name="map-marker-path" size={64} color={colors['surface-container-highest']} />
+              <MaterialCommunityIcons name="map-marker-path" size={64} color={colors.outline} />
             </View>
-            <Text style={styles.emptyTitle}>No meetups yet</Text>
-            <Text style={styles.emptySubtitle}>Plan your first meeting and find the perfect midpoint for everyone.</Text>
+            <Text style={styles.emptyTitle}>The map is quiet</Text>
+            <Text style={styles.emptySubtitle}>You haven't planned any meetups yet. Start one to find the perfect middle ground.</Text>
             <TouchableOpacity 
               style={styles.emptyButton}
-              onPress={() => router.push('/meetup/create')}
+              activeOpacity={0.9}
+              onPress={() => router.push('/meetup/type')}
             >
-              <Text style={styles.emptyButtonText}>Create a Meetup</Text>
+              <Text style={styles.emptyButtonText}>Start First Meetup</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <>
             {activeSessions.length > 0 && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Active & Upcoming</Text>
+                <Text style={styles.sectionTitle}>ACTIVE & UPCOMING</Text>
                 {activeSessions.map((session) => (
                   <MeetupSessionCard 
                     key={session.id}
                     title={session.title}
-                    time="Today, 15:30" // Mock time for UI
-                    image={`https://picsum.photos/seed/${session.id}/400/400`}
-                    avatars={session.participants.map(p => p.profile.avatarUrl || '')}
+                    time={session.state === 'confirmed' ? "Confirmed" : "Waiting for friends"}
+                    image={`https://source.unsplash.com/featured/?${session.preferences.category},venue`}
+                    avatars={session.participants.map(p => p.profile?.avatarUrl || `https://i.pravatar.cc/150?u=${p.userId}`)}
                     isToday={true}
                     onPress={() => router.push(`/session/${session.id}` as any)}
                   />
@@ -98,14 +105,14 @@ export default function SessionsScreen() {
 
             {pastSessions.length > 0 && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Past Meetups</Text>
+                <Text style={styles.sectionTitle}>PAST MEETUPS</Text>
                 {pastSessions.map((session) => (
                   <MeetupSessionCard 
                     key={session.id}
                     title={session.title}
-                    time="Oct 12, 10:00" // Mock time for UI
-                    image={`https://picsum.photos/seed/${session.id}/400/400`}
-                    avatars={session.participants.map(p => p.profile.avatarUrl || '')}
+                    time="Completed"
+                    image={`https://source.unsplash.com/featured/?${session.preferences.category},building`}
+                    avatars={session.participants.map(p => p.profile?.avatarUrl || `https://i.pravatar.cc/150?u=${p.userId}`)}
                     isToday={false}
                     onPress={() => router.push(`/session/${session.id}` as any)}
                   />
@@ -127,8 +134,8 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 16,
+    paddingTop: 24,
+    paddingBottom: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -137,16 +144,22 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.headlineExtraBold,
     fontSize: 32,
     color: colors['on-surface'],
-    letterSpacing: -0.5,
+    letterSpacing: -0.8,
+  },
+  subtitle: {
+    fontFamily: typography.fontFamily.body,
+    fontSize: 14,
+    color: colors.outline,
+    marginTop: 2,
   },
   addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    ...shadows.md,
+    ...shadows.lg,
   },
   scrollContent: {
     paddingHorizontal: 24,
@@ -159,21 +172,20 @@ const styles = StyleSheet.create({
     paddingTop: 100,
   },
   section: {
-    marginBottom: 32,
+    marginBottom: 40,
   },
   sectionTitle: {
     fontFamily: typography.fontFamily.headlineBold,
-    fontSize: 18,
+    fontSize: 12,
     color: colors.outline,
-    marginBottom: 16,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    marginBottom: 20,
+    letterSpacing: 1.5,
   },
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: 80,
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
   },
   emptyIconContainer: {
     width: 120,
@@ -182,13 +194,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors['surface-container-low'],
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 32,
   },
   emptyTitle: {
     fontFamily: typography.fontFamily.headlineBold,
-    fontSize: 22,
+    fontSize: 24,
     color: colors['on-surface'],
-    marginBottom: 8,
+    marginBottom: 12,
   },
   emptySubtitle: {
     fontFamily: typography.fontFamily.body,
@@ -196,14 +208,14 @@ const styles = StyleSheet.create({
     color: colors.outline,
     textAlign: 'center',
     lineHeight: 24,
-    marginBottom: 32,
+    marginBottom: 40,
   },
   emptyButton: {
     backgroundColor: colors.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 14,
+    paddingHorizontal: 32,
+    paddingVertical: 16,
     borderRadius: radii.xl,
-    ...shadows.md,
+    ...shadows.lg,
   },
   emptyButtonText: {
     fontFamily: typography.fontFamily.headlineBold,

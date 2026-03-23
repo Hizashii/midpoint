@@ -162,10 +162,10 @@ export default function LeaveNowScreen() {
                    <Marker key={p.id} coordinate={{ latitude: p.location.lat, longitude: p.location.lng }}>
                       <View style={styles.participantMarkerContainer}>
                         <View style={styles.participantMarkerAvatar}>
-                          <Image source={{ uri: p.profile.avatarUrl }} style={styles.markerImage} />
+                          <Image source={{ uri: p.profile?.avatarUrl || `https://i.pravatar.cc/150?u=${p.id}` }} style={styles.markerImage} />
                         </View>
                         <View style={styles.markerNameBadge}>
-                          <Text style={styles.markerNameText}>{p.profile.name.split(' ')[0]}</Text>
+                          <Text style={styles.markerNameText}>{(p.profile?.name || p.name || 'User').split(' ')[0]}</Text>
                         </View>
                       </View>
                    </Marker>
@@ -183,10 +183,10 @@ export default function LeaveNowScreen() {
               <View key={p.id} style={styles.statusRow}>
                 <View style={styles.statusInfo}>
                   <View style={styles.avatarContainerSmall}>
-                    <Image source={{ uri: p.profile.avatarUrl }} style={styles.statusAvatar} />
+                    <Image source={{ uri: p.profile?.avatarUrl || `https://i.pravatar.cc/150?u=${p.id}` }} style={styles.statusAvatar} />
                   </View>
                   <View>
-                    <Text style={styles.statusName}>{p.profile.name}</Text>
+                    <Text style={styles.statusName}>{p.profile?.name || p.name || 'User'}</Text>
                     <Text style={styles.statusDetails}>{p.status === 'ready' ? 'On the way' : 'Getting ready'}</Text>
                   </View>
                 </View>

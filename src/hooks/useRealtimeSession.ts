@@ -30,7 +30,10 @@ export function useRealtimeSession(sessionId: string) {
           table: 'meetup_sessions',
           filter: `id=eq.${sessionId}`,
         },
-        () => fetchSession()
+        (payload) => {
+          console.log('Realtime Session Update:', payload);
+          fetchSession();
+        }
       )
       .on(
         'postgres_changes',
@@ -40,9 +43,14 @@ export function useRealtimeSession(sessionId: string) {
           table: 'session_participants',
           filter: `session_id=eq.${sessionId}`,
         },
-        () => fetchSession()
+        (payload) => {
+          console.log('Realtime Participant Update:', payload);
+          fetchSession();
+        }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`Realtime Subscription Status for ${sessionId}:`, status);
+      });
 
     return () => {
       supabase.removeChannel(channel);

@@ -41,11 +41,12 @@ export default function MeetupTypeScreen() {
     });
   }, []);
 
-  const handleNext = () => {
+  const onTypeSelect = (typeId: string) => {
+    setSelectedType(typeId);
     router.push({
       pathname: '/meetup/setup',
       params: { 
-        type: selectedType,
+        type: typeId,
         lat: region.latitude,
         lng: region.longitude
       }
@@ -76,15 +77,7 @@ export default function MeetupTypeScreen() {
         initialRegion={region}
       />
 
-      <MapBottomSheet 
-        footer={
-          <PrimaryButton 
-            title="Next Step" 
-            onPress={handleNext}
-            icon={<MaterialCommunityIcons name="arrow-right" size={20} color="white" />}
-          />
-        }
-      >
+      <MapBottomSheet>
         <View style={styles.bottomSheetHeader}>
           <View style={styles.progressRow}>
             <StepProgress currentStep={1} totalSteps={3} />
@@ -110,7 +103,7 @@ export default function MeetupTypeScreen() {
                   isSelected && styles.typeCardSelected,
                   isCustom && !isSelected && styles.customCard
                 ]}
-                onPress={() => setSelectedType(type.id)}
+                onPress={() => onTypeSelect(type.id)}
                 activeOpacity={0.7}
               >
                 <View style={[

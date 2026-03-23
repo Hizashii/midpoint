@@ -22,11 +22,11 @@ export const ParticipantStatusPill = ({ participant }: ParticipantStatusPillProp
           text: colors['on-error-container'],
           label: 'LATE',
         };
-      case 'en_route':
+      case 'on_the_way':
         return {
           bg: colors.primary,
           text: 'white',
-          label: `${participant.etaMinutes} MIN`,
+          label: `${participant.etaMinutes ?? '—'} MIN`,
         };
       case 'ready':
       default:

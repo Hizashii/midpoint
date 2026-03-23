@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { View, TextInput, StyleSheet, TextInputProps } from 'react-native';
+import { View, TextInput, StyleSheet, TextInputProps, StyleProp, ViewStyle } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { colors, radii, spacing, typography, shadows } from '../lib/theme';
 
-interface SearchBarProps extends TextInputProps {
+interface SearchBarProps extends Omit<TextInputProps, 'style'> {
   onFilterPress?: () => void;
+  containerStyle?: StyleProp<ViewStyle>;
 }
 
-export const SearchBar = ({ onFilterPress, style, ...props }: SearchBarProps) => {
+export const SearchBar = ({ onFilterPress, containerStyle, ...props }: SearchBarProps) => {
   const [isFocused, setIsFocused] = useState(false);
 
   return (
@@ -16,7 +17,7 @@ export const SearchBar = ({ onFilterPress, style, ...props }: SearchBarProps) =>
         style={[
           styles.container,
           isFocused && styles.containerFocused,
-          style,
+          containerStyle,
         ]}
       >
         <MaterialIcons name="search" size={24} color={colors.outline} style={styles.icon} />

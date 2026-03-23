@@ -1,20 +1,61 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions, Platform } from 'react-native';
-import { router, Stack } from 'expo-router';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions, Platform, ActivityIndicator } from 'react-native';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { colors, typography, radii, spacing, shadows } from '../../src/lib/theme';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRealtimeSession } from '../../src/hooks/useRealtimeSession';
+import { venueService } from '../../src/services/venueService';
 
 const { width } = Dimensions.get('window');
 
-const SUMMARY_PARTICIPANTS = [
-  { id: '1', name: 'Sarah', from: 'Vesterbro', time: '12 min', mode: 'Walking', image: 'https://i.pravatar.cc/150?u=sarah' },
-  { id: '2', name: 'James', from: 'Nørrebro', time: '15 min', mode: 'Biking', image: 'https://i.pravatar.cc/150?u=james' },
-  { id: '3', name: 'Elena', from: 'Frederiksberg', time: '14 min', mode: 'Metro', image: 'https://i.pravatar.cc/150?u=elena' },
-];
-
 export default function MeetupRecapScreen() {
+  const { id } = useLocalSearchParams();
+  const { session, loading } = useRealtimeSession(id as string);
+  const [chosenVenue, setChosenVenue] = useState<any>(null);
+  const [venueLoading, setVenueLoading] = useState(false);
+
+  useEffect(() => {
+    async function loadVenue() {
+      if (session?.chosenVenueId) {
+        setVenueLoading(true);
+        try {
+          const details = await venueService.getVenueDetails(session.chosenVenueId);
+          // In a real app, we'd also get the venue name/coords from the session's candidate list
+          // For now, let's assume we fetch by ID.
+          setChosenVenue(details);
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setVenueLoading(false);
+        }
+      }
+    }
+    loadVenue();
+  }, [session?.chosenVenueId]);
+
+  if (loading || venueLoading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (!session) return null;
+
+  // Real Stats
+  const participants = session.participants;
+  const avgTravel = Math.round(
+    participants.reduce((acc, p) => acc + (p.etaMinutes || 15), 0) / participants.length
+  );
+  
+  // Compute Fairness (simplified)
+  const times = participants.map(p => p.etaMinutes || 15);
+  const variance = Math.max(...times) - Math.min(...times);
+  const fairnessScore = Math.max(0, 100 - (variance * 3));
+
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ 
@@ -22,15 +63,14 @@ export default function MeetupRecapScreen() {
         headerTransparent: true,
         headerTitle: '',
         headerLeft: () => (
-          <View style={styles.headerLogo}>
-            <MaterialCommunityIcons name="explore" size={24} color="#007AFF" />
-            <Text style={styles.headerTitleText}>Midpoint</Text>
-          </View>
+          <TouchableOpacity style={styles.headerButton} onPress={() => router.replace('/(tabs)')}>
+            <MaterialIcons name="close" size={24} color={colors['on-surface']} />
+          </TouchableOpacity>
         ),
         headerRight: () => (
-          <View style={styles.avatarContainer}>
-             <MaterialCommunityIcons name="account-circle" size={32} color={colors['primary-container']} />
-          </View>
+          <TouchableOpacity style={styles.avatarContainer}>
+             <MaterialCommunityIcons name="share-variant" size={22} color={colors.primary} />
+          </TouchableOpacity>
         )
       }} />
 
@@ -41,16 +81,16 @@ export default function MeetupRecapScreen() {
               <Text style={styles.completedBadgeText}>COMPLETED SESSION</Text>
            </View>
            <Text style={styles.headline}>
-              Good times at <Text style={{ color: colors.primary }}>Mikkeller Bar</Text>
+              Good times at <Text style={{ color: colors.primary }}>{chosenVenue?.name || 'The Midpoint'}</Text>
            </Text>
            
            <View style={styles.heroSummaryRow}>
               <View style={styles.avatarCollage}>
-                 {SUMMARY_PARTICIPANTS.map((p, i) => (
+                 {participants.map((p, i) => (
                    <Image 
                      key={p.id} 
-                     source={{ uri: p.image }} 
-                     style={[styles.collageAvatar, { marginLeft: i > 0 ? -20 : 0, zIndex: 10 - i }]} 
+                     source={{ uri: p.profile?.avatarUrl || `https://i.pravatar.cc/150?u=${p.userId}` }} 
+                     style={[styles.collageAvatar, { marginLeft: i > 0 ? -24 : 0, zIndex: 10 - i }]} 
                    />
                  ))}
               </View>
@@ -58,11 +98,11 @@ export default function MeetupRecapScreen() {
               <View style={styles.statsRow}>
                  <View style={styles.statCard}>
                     <Text style={styles.statLabel}>FAIRNESS</Text>
-                    <Text style={[styles.statValue, { color: colors.tertiary }]}>94%</Text>
+                    <Text style={[styles.statValue, { color: colors.tertiary }]}>{fairnessScore}%</Text>
                  </View>
                  <View style={styles.statCard}>
                     <Text style={styles.statLabel}>AVG TRAVEL</Text>
-                    <Text style={styles.statValue}>14m</Text>
+                    <Text style={styles.statValue}>{avgTravel}m</Text>
                  </View>
               </View>
            </View>
@@ -72,7 +112,7 @@ export default function MeetupRecapScreen() {
         <View style={styles.spotlightCard}>
            <View style={styles.imageContainer}>
               <Image 
-                source={{ uri: 'https://i.pravatar.cc/800?u=mikkeller_interior' }} 
+                source={{ uri: `https://source.unsplash.com/featured/?${session.preferences.category},interior` }} 
                 style={styles.spotlightImage} 
               />
               <LinearGradient
@@ -82,32 +122,32 @@ export default function MeetupRecapScreen() {
               <View style={styles.imageTitleGroup}>
                  <View style={styles.locationRow}>
                     <MaterialCommunityIcons name="map-marker" size={12} color="white" />
-                    <Text style={styles.locationText}>VICTORIAGADE, COPENHAGEN</Text>
+                    <Text style={styles.locationText}>{session.preferences.category.toUpperCase()}</Text>
                  </View>
-                 <Text style={styles.venueTitle}>Mikkeller Bar</Text>
+                 <Text style={styles.venueTitle}>{chosenVenue?.name || 'Local Spot'}</Text>
               </View>
            </View>
            
            <View style={styles.summarySection}>
               <View style={styles.summaryHeader}>
-                 <Text style={styles.summaryTitle}>Travel Summary</Text>
+                 <Text style={styles.summaryTitle}>Group Journey</Text>
                  <View style={styles.divider} />
-                 <Text style={styles.dateText}>October 24, 2023</Text>
+                 <Text style={styles.dateText}>{new Date(session.createdAt).toLocaleDateString()}</Text>
               </View>
               
               <View style={styles.travelerList}>
-                 {SUMMARY_PARTICIPANTS.map(p => (
+                 {participants.map(p => (
                    <View key={p.id} style={styles.travelerRow}>
                       <View style={styles.travelerInfo}>
-                         <Image source={{ uri: p.image }} style={styles.travelerAvatar} />
+                         <Image source={{ uri: p.profile?.avatarUrl || `https://i.pravatar.cc/150?u=${p.userId}` }} style={styles.travelerAvatar} />
                          <View>
-                            <Text style={styles.travelerName}>{p.name}</Text>
-                            <Text style={styles.travelerFrom}>From {p.from}</Text>
+                            <Text style={styles.travelerName}>{p.profile?.name || 'Friend'}</Text>
+                            <Text style={styles.travelerFrom}>Via {p.mode}</Text>
                          </View>
                       </View>
                       <View style={styles.travelerMeta}>
-                         <Text style={styles.travelTime}>{p.time}</Text>
-                         <Text style={styles.travelMode}>{p.mode.toUpperCase()}</Text>
+                         <Text style={styles.travelTime}>{p.etaMinutes || 15}m</Text>
+                         <Text style={styles.travelMode}>TRAVEL TIME</Text>
                       </View>
                    </View>
                  ))}
@@ -115,78 +155,42 @@ export default function MeetupRecapScreen() {
            </View>
         </View>
 
-        {/* Fairness Achievement Card */}
-        <View style={styles.achievementCard}>
-           <LinearGradient
-             colors={[colors.primary, colors['primary-container']]}
-             start={{ x: 0, y: 0 }}
-             end={{ x: 1, y: 1 }}
-             style={styles.achievementGradient}
-           >
-              <MaterialCommunityIcons name="scale-balance" size={40} color="white" style={styles.achievementIcon} />
-              <Text style={styles.achievementTitle}>Elite Balance Achieved</Text>
-              <Text style={styles.achievementDesc}>
-                The travel variance was less than 3 minutes between all participants. A truly fair midpoint.
-              </Text>
-              <View style={styles.decoCircle} />
-           </LinearGradient>
-        </View>
+        {/* Achievement Card */}
+        {fairnessScore > 90 && (
+          <View style={styles.achievementCard}>
+             <LinearGradient
+               colors={[colors.tertiary, '#004d4a']}
+               start={{ x: 0, y: 0 }}
+               end={{ x: 1, y: 1 }}
+               style={styles.achievementGradient}
+             >
+                <MaterialCommunityIcons name="scale-balance" size={40} color="white" style={styles.achievementIcon} />
+                <Text style={styles.achievementTitle}>Perfect Balance</Text>
+                <Text style={styles.achievementDesc}>
+                  Your group achieved a rare level of coordination. Nobody traveled more than {variance} minutes apart!
+                </Text>
+                <View style={styles.decoCircle} />
+             </LinearGradient>
+          </View>
+        )}
 
-        {/* Action Buttons */}
         <View style={styles.actionsContainer}>
            <PrimaryButton 
-             title="Rebook this spot" 
-             icon={<MaterialCommunityIcons name="calendar-today" size={18} color="white" />}
-             onPress={() => {}} 
+             title="Plan another one" 
+             icon={<MaterialCommunityIcons name="calendar-plus" size={18} color="white" />}
+             onPress={() => router.replace('/meetup/type')} 
            />
            <TouchableOpacity style={styles.secondaryButton}>
-              <MaterialCommunityIcons name="bookmark" size={20} color={colors.primary} />
-              <Text style={styles.secondaryButtonText}>Save to Favorites</Text>
+              <MaterialIcons name="bookmark-border" size={20} color={colors.primary} />
+              <Text style={styles.secondaryButtonText}>Save this spot</Text>
            </TouchableOpacity>
         </View>
 
-        {/* Social Share Footnote */}
         <View style={styles.socialFooter}>
-           <View style={styles.shareRow}>
-              <View style={styles.shareIconBg}>
-                 <MaterialCommunityIcons name="share-variant" size={20} color={colors.primary} />
-              </View>
-              <View>
-                 <Text style={styles.shareTitle}>Share this memory</Text>
-                 <Text style={styles.shareSubtitle}>Send the summary card to your group</Text>
-              </View>
-           </View>
-           <View style={styles.tagRow}>
-              <View style={styles.tag}>
-                 <Text style={styles.tagText}>#MidpointMemories</Text>
-              </View>
-              <View style={styles.tag}>
-                 <Text style={styles.tagText}>Copenhagen</Text>
-              </View>
-           </View>
+           <Text style={styles.shareTitle}>#MidpointMemories</Text>
+           <Text style={styles.shareSubtitle}>Shared journeys are the best ones.</Text>
         </View>
       </ScrollView>
-
-      {/* Mobile Nav */}
-      <View style={styles.mobileNav}>
-         <TouchableOpacity style={styles.navItem} onPress={() => router.replace('/(tabs)')}>
-            <MaterialCommunityIcons name="home-map-marker" size={24} color={colors.outline} />
-            <Text style={styles.navLabel}>HOME</Text>
-         </TouchableOpacity>
-         <TouchableOpacity style={styles.navItem}>
-            <MaterialCommunityIcons name="account-group" size={24} color={colors.primary} />
-            <Text style={[styles.navLabel, { color: colors.primary }]}>SESSIONS</Text>
-            <View style={styles.activeDot} />
-         </TouchableOpacity>
-         <TouchableOpacity style={styles.navItem}>
-            <MaterialCommunityIcons name="bookmark-outline" size={24} color={colors.outline} />
-            <Text style={styles.navLabel}>SAVED</Text>
-         </TouchableOpacity>
-         <TouchableOpacity style={styles.navItem}>
-            <MaterialCommunityIcons name="account-outline" size={24} color={colors.outline} />
-            <Text style={styles.navLabel}>PROFILE</Text>
-         </TouchableOpacity>
-      </View>
     </View>
   );
 }
@@ -196,34 +200,38 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  headerLogo: {
-    flexDirection: 'row',
+  center: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
-    marginLeft: 16,
-    paddingVertical: 8,
   },
-  headerTitleText: {
-    fontFamily: typography.fontFamily.headlineExtraBold,
-    fontSize: 22,
-    color: colors['on-surface'],
-    letterSpacing: -1,
+  headerButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'white',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 16,
+    ...shadows.md,
   },
   avatarContainer: {
     marginRight: 16,
-    borderWidth: 2,
-    borderColor: 'rgba(0,0,0,0.05)',
-    borderRadius: 20,
-    backgroundColor: colors['surface-container-highest'],
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'white',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.md,
   },
   scrollContent: {
     paddingTop: 100,
-    paddingBottom: 120,
+    paddingBottom: 60,
     paddingHorizontal: 24,
   },
   header: {
-    marginBottom: 48,
-    alignItems: 'flex-start',
+    marginBottom: 40,
   },
   completedBadge: {
     flexDirection: 'row',
@@ -233,6 +241,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: radii.full,
+    alignSelf: 'flex-start',
     marginBottom: 16,
   },
   completedBadgeText: {
@@ -244,63 +253,61 @@ const styles = StyleSheet.create({
   },
   headline: {
     fontFamily: typography.fontFamily.headlineExtraBold,
-    fontSize: 40,
+    fontSize: 36,
     color: colors['on-surface'],
-    letterSpacing: -1.5,
-    lineHeight: 44,
-    marginBottom: 32,
+    letterSpacing: -1,
+    lineHeight: 40,
+    marginBottom: 24,
   },
   heroSummaryRow: {
-    flexDirection: 'column',
-    gap: 24,
-    width: '100%',
+    gap: 20,
   },
   avatarCollage: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   collageAvatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    borderWidth: 4,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 3,
     borderColor: 'white',
     ...shadows.sm,
   },
   statsRow: {
     flexDirection: 'row',
-    gap: 16,
+    gap: 12,
   },
   statCard: {
+    flex: 1,
     backgroundColor: colors['surface-container-low'],
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    padding: 16,
     borderRadius: radii.xl,
-    minWidth: 100,
   },
   statLabel: {
     fontFamily: typography.fontFamily.label,
-    fontSize: 10,
-    fontWeight: '700',
-    color: colors['on-surface-variant'],
+    fontSize: 9,
+    fontWeight: '800',
+    color: colors.outline,
     letterSpacing: 1,
     marginBottom: 4,
-    opacity: 0.6,
   },
   statValue: {
     fontFamily: typography.fontFamily.headlineBold,
-    fontSize: 24,
+    fontSize: 22,
     color: colors['on-surface'],
   },
   spotlightCard: {
     backgroundColor: colors['surface-container-lowest'],
     borderRadius: radii['3xl'],
     overflow: 'hidden',
-    ...shadows.md,
+    ...shadows.lg,
     marginBottom: 24,
+    borderWidth: 1,
+    borderColor: colors['outline-variant'] + '15',
   },
   imageContainer: {
-    height: 260,
+    height: 240,
     position: 'relative',
   },
   spotlightImage: {
@@ -312,8 +319,8 @@ const styles = StyleSheet.create({
   },
   imageTitleGroup: {
     position: 'absolute',
-    bottom: 24,
-    left: 24,
+    bottom: 20,
+    left: 20,
   },
   locationRow: {
     flexDirection: 'row',
@@ -324,43 +331,42 @@ const styles = StyleSheet.create({
   locationText: {
     fontFamily: typography.fontFamily.label,
     fontSize: 10,
-    fontWeight: '700',
-    color: 'white',
+    fontWeight: '800',
+    color: 'rgba(255,255,255,0.8)',
     letterSpacing: 1,
   },
   venueTitle: {
     fontFamily: typography.fontFamily.headlineBold,
-    fontSize: 28,
+    fontSize: 26,
     color: 'white',
   },
   summarySection: {
-    padding: 32,
+    padding: 24,
   },
   summaryHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   summaryTitle: {
     fontFamily: typography.fontFamily.headlineBold,
-    fontSize: 18,
+    fontSize: 16,
     color: colors['on-surface'],
   },
   divider: {
     flex: 1,
     height: 1,
     backgroundColor: colors['outline-variant'],
-    marginHorizontal: 16,
-    opacity: 0.2,
+    marginHorizontal: 12,
+    opacity: 0.1,
   },
   dateText: {
     fontFamily: typography.fontFamily.body,
-    fontSize: 14,
-    color: colors['on-surface-variant'],
-    opacity: 0.6,
+    fontSize: 13,
+    color: colors.outline,
   },
   travelerList: {
-    gap: 24,
+    gap: 20,
   },
   travelerRow: {
     flexDirection: 'row',
@@ -370,180 +376,105 @@ const styles = StyleSheet.create({
   travelerInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 12,
   },
   travelerAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 2,
-    borderColor: colors.primary + '20',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   travelerName: {
     fontFamily: typography.fontFamily.headlineBold,
-    fontSize: 15,
+    fontSize: 14,
     color: colors['on-surface'],
   },
   travelerFrom: {
     fontFamily: typography.fontFamily.body,
     fontSize: 12,
-    color: colors['on-surface-variant'],
-    opacity: 0.8,
+    color: colors.outline,
   },
   travelerMeta: {
     alignItems: 'flex-end',
   },
   travelTime: {
     fontFamily: typography.fontFamily.headlineBold,
-    fontSize: 16,
-    color: colors['on-surface'],
+    fontSize: 15,
+    color: colors.primary,
   },
   travelMode: {
     fontFamily: typography.fontFamily.label,
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: '800',
-    color: colors.tertiary,
+    color: colors.outline,
     letterSpacing: 0.5,
   },
   achievementCard: {
-    height: 220,
     borderRadius: radii['3xl'],
     overflow: 'hidden',
-    ...shadows.lg,
+    ...shadows.md,
     marginBottom: 24,
   },
   achievementGradient: {
-    flex: 1,
-    padding: 32,
-    justifyContent: 'flex-end',
+    padding: 24,
     position: 'relative',
   },
   achievementIcon: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   achievementTitle: {
     fontFamily: typography.fontFamily.headlineBold,
-    fontSize: 24,
+    fontSize: 20,
     color: 'white',
-    marginBottom: 8,
-    lineHeight: 28,
+    marginBottom: 4,
   },
   achievementDesc: {
     fontFamily: typography.fontFamily.body,
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.7)',
-    lineHeight: 20,
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.8)',
+    lineHeight: 18,
   },
   decoCircle: {
     position: 'absolute',
-    top: -48,
-    right: -48,
-    width: 192,
-    height: 192,
-    borderRadius: 96,
+    top: -20,
+    right: -20,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   actionsContainer: {
-    backgroundColor: colors['surface-container-low'],
-    padding: 32,
-    borderRadius: radii['3xl'],
-    gap: 16,
-    marginBottom: 48,
+    gap: 12,
+    marginBottom: 40,
   },
   secondaryButton: {
-    height: 58,
+    height: 56,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors['surface-container-lowest'],
+    backgroundColor: colors['surface-container-low'],
     borderRadius: radii.xl,
     gap: 8,
-    ...shadows.sm,
   },
   secondaryButtonText: {
     fontFamily: typography.fontFamily.headlineBold,
-    fontSize: 16,
-    color: colors['on-surface'],
+    fontSize: 15,
+    color: colors.primary,
   },
   socialFooter: {
-    paddingVertical: 48,
-    borderTopWidth: 1,
-    borderTopColor: colors['outline-variant'] + '20',
-    gap: 24,
-  },
-  shareRow: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-  },
-  shareIconBg: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors['surface-container-high'],
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingVertical: 20,
+    gap: 4,
   },
   shareTitle: {
     fontFamily: typography.fontFamily.headlineBold,
     fontSize: 16,
-    color: colors['on-surface'],
+    color: colors.outline,
+    opacity: 0.5,
   },
   shareSubtitle: {
     fontFamily: typography.fontFamily.body,
     fontSize: 12,
-    color: colors['on-surface-variant'],
-    opacity: 0.6,
-  },
-  tagRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  tag: {
-    backgroundColor: colors['surface-container-high'],
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: radii.full,
-  },
-  tagText: {
-    fontFamily: typography.fontFamily.label,
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors['on-surface-variant'],
-    opacity: 0.8,
-  },
-  mobileNav: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 80,
-    backgroundColor: 'rgba(253, 248, 248, 0.85)',
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingBottom: 20,
-    borderTopLeftRadius: radii['2xl'],
-    borderTopRightRadius: radii['2xl'],
-    ...shadows.lg,
-  },
-  navItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-  },
-  navLabel: {
-    fontFamily: typography.fontFamily.label,
-    fontSize: 10,
-    fontWeight: '700',
     color: colors.outline,
-    letterSpacing: 1,
-  },
-  activeDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.primary,
-    marginTop: 2,
+    opacity: 0.4,
   },
 });

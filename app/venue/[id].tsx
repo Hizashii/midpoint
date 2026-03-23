@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions, Platform, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions, Platform, Alert, ActivityIndicator } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { colors, typography, radii, spacing, shadows } from '../../src/lib/theme';
@@ -8,52 +8,94 @@ import { meetupService } from '../../src/services/meetupService';
 import { calendarService } from '../../src/services/calendarService';
 import { notificationService } from '../../src/services/notificationService';
 import { useMeetupStore } from '../../src/store/meetupStore';
+import { venueService } from '../../src/services/venueService';
+import MapView from '../../src/components/MapView';
+import type { VenueCandidate } from '../../src/types';
 
-const { width } = Dimensions.get('window');
-
-const PARTICIPANTS = [
-  { id: '1', name: 'Alex', status: 'arrived', statusText: 'Arrived 5m ago', image: 'https://i.pravatar.cc/150?u=alex', transport: 'walk' },
-  { id: '2', name: 'Tom', status: 'on_the_way', statusText: 'Cycling • 8 min away', image: 'https://i.pravatar.cc/150?u=tom', transport: 'bike', eta: '19:42' },
-  { id: '3', name: 'Sarah', status: 'late', statusText: 'Transit • Heavy traffic', image: 'https://i.pravatar.cc/150?u=sarah', transport: 'transit', lateTime: '12m Late' },
-];
+const FALLBACK_VENUE: VenueCandidate = {
+  id: 'fallback-venue',
+  venueId: 'fallback-venue',
+  name: 'Mikkeller Bar',
+  lat: 55.6761,
+  lng: 12.5683,
+  category: 'Craft Beer & Nordic Bites',
+  address: 'Viktoriagade 8, 1655 Copenhagen',
+  rating: 4.8,
+  photoUrl: 'https://i.pravatar.cc/800?u=mikkeller',
+  priceLevel: 2,
+  tags: ['Good for groups', 'Open late', 'Outdoor seating'],
+  averageMinutes: 0,
+  maxMinutes: 0,
+  variance: 0,
+  violatedConstraints: 0,
+  fairnessScore: 0,
+  totalScore: 0,
+  travelTimes: {},
+};
 
 export default function VenueDetailsScreen() {
   const { id } = useLocalSearchParams();
   const activeSession = useMeetupStore(state => state.activeSession);
+  const venueCandidates = useMeetupStore(state => state.venueCandidates);
   const [isFinalizing, setIsFinalizing] = useState(false);
+  const [details, setDetails] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const venue = venueCandidates.find(v => v.id === id) ?? FALLBACK_VENUE;
+
+  const participants = activeSession?.participants || [];
+
+  useEffect(() => {
+    async function loadDetails() {
+      try {
+        const data = await venueService.getVenueDetails(id as string, venue.name);
+        setDetails(data);
+      } catch (e) {
+        console.error("Failed to load details", e);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadDetails();
+  }, [id, venue.name]);
+
+  const handleOpenGoogleMaps = () => {
+    if (details?.googleMapsUrl) {
+      if (Platform.OS === 'web') {
+        window.open(details.googleMapsUrl, '_blank');
+      } else {
+        // For native, we could use Linking, but just alert the URL for now as a fallback
+        Alert.alert("Opening Google Maps", "Taking you to the official Google Maps page for " + venue.name);
+      }
+    }
+  };
 
   const handleChooseVenue = async () => {
     console.log("Choosing venue:", id);
     setIsFinalizing(true);
     try {
       const sessionId = activeSession?.id || 'demo-session';
-      const venueName = 'Mikkeller Bar'; 
+      const venueName = venue.name; 
       
       console.log("Finalizing session in service...");
-      await meetupService.finalizeSession(sessionId, id as string, venueName);
+      await meetupService.finalizeSession(sessionId, id as string);
       
       console.log("Updating store...");
       const updatedSession = activeSession ? {
         ...activeSession,
-        status: 'active' as any,
-        selectedVenueId: id as string
+        state: 'confirmed' as any,
+        chosenVenueId: id as string
       } : {
         id: 'demo-session',
-        title: 'Mikkeller Bar Meetup',
-        type: 'drinks',
-        date: new Date().toISOString(),
-        status: 'active' as any,
-        selectedVenueId: id as string,
-        participants: PARTICIPANTS.map(p => ({
-          id: p.id,
-          userId: p.id,
-          profile: { id: p.id, name: p.name, avatarUrl: p.image },
-          location: { lat: 55.4765, lng: 8.4515 },
-          status: 'ready' as any
-        }))
+        title: `${venue.name} Meetup`,
+        preferences: { category: 'drinks' },
+        createdAt: new Date().toISOString(),
+        state: 'confirmed' as any,
+        chosenVenueId: id as string,
+        participants: participants
       };
       
-      useMeetupStore.getState().setActiveSession(updatedSession);
+      useMeetupStore.getState().setActiveSession(updatedSession as any);
       
       if (Platform.OS !== 'web') {
         console.log("Attempting native integrations...");
@@ -64,7 +106,7 @@ export default function VenueDetailsScreen() {
             `Meetup at ${venueName}`,
             startDate,
             new Date(startDate.getTime() + 2 * 60 * 60 * 1000),
-            'Viktoriagade 8, 1655 Copenhagen',
+            venue.address,
             'Midpoint organized session.'
           );
           await notificationService.scheduleMeetingReminder(
@@ -79,7 +121,6 @@ export default function VenueDetailsScreen() {
 
       console.log("Showing confirmation alert...");
       if (Platform.OS === 'web') {
-        // Direct navigation for web to avoid Alert issues
         router.replace('/session/leave-now');
       } else {
         Alert.alert(
@@ -123,34 +164,34 @@ export default function VenueDetailsScreen() {
         {/* Hero Section */}
         <View style={styles.heroSection}>
           <Image 
-            source={{ uri: 'https://i.pravatar.cc/800?u=mikkeller' }} 
+            source={{ uri: venue.photoUrl || 'https://i.pravatar.cc/800?u=venue' }} 
             style={styles.heroImage} 
           />
           <View style={styles.heroOverlay} />
           <View style={styles.premiumBadge}>
             <MaterialIcons name="verified" size={16} color={colors.tertiary} />
-            <Text style={styles.premiumText}>PREMIUM PARTNER</Text>
+            <Text style={styles.premiumText}>MIDPOINT PICK</Text>
           </View>
         </View>
 
         {/* Venue Content */}
         <View style={styles.contentCard}>
           <View style={styles.venueHeader}>
-            <Text style={styles.venueTitle}>Mikkeller Bar</Text>
+            <Text style={styles.venueTitle}>{venue.name}</Text>
             <View style={styles.venueMeta}>
               <View style={styles.ratingRow}>
                 <MaterialIcons name="star" size={16} color="#FFD700" />
-                <Text style={styles.ratingText}>4.8</Text>
+                <Text style={styles.ratingText}>{venue.rating?.toFixed(1) || '4.5'}</Text>
               </View>
               <Text style={styles.metaDivider}>•</Text>
-              <Text style={styles.priceText}>$$</Text>
+              <Text style={styles.priceText}>{"$".repeat(venue.priceLevel || 2)}</Text>
               <Text style={styles.metaDivider}>•</Text>
-              <Text style={styles.categoryText}>Craft Beer & Nordic Bites</Text>
+              <Text style={styles.categoryText}>{venue.category}</Text>
             </View>
           </View>
 
           <View style={styles.tagRow}>
-            {['Good for groups', 'Open late', 'Outdoor seating'].map(tag => (
+            {(venue.tags ?? ['Good for groups', 'Open late', 'Outdoor seating']).map((tag: string) => (
               <View key={tag} style={styles.tag}>
                 <Text style={styles.tagText}>{tag}</Text>
               </View>
@@ -158,14 +199,28 @@ export default function VenueDetailsScreen() {
           </View>
 
           <Text style={styles.description}>
-            A destination for beer lovers worldwide. This location pairs minimalist Danish design with an ever-rotating selection of world-class craft brews and artisanal snacks.
+            {details?.description || "Loading description..."}
           </Text>
+
+          <TouchableOpacity 
+            style={styles.googleMapsButton} 
+            onPress={handleOpenGoogleMaps}
+            activeOpacity={0.8}
+          >
+            <MaterialCommunityIcons name="google-maps" size={20} color={colors.primary} />
+            <Text style={styles.googleMapsButtonText}>View on Google Maps</Text>
+          </TouchableOpacity>
 
           {/* Mini Map */}
           <View style={styles.miniMapContainer}>
-            <Image 
-              source={{ uri: 'https://i.pravatar.cc/400?u=map' }} 
+            <MapView 
               style={styles.miniMap} 
+              initialRegion={{
+                latitude: venue.lat || 55.6761,
+                longitude: venue.lng || 12.5683,
+                latitudeDelta: 0.01,
+                longitudeDelta: 0.01,
+              }}
             />
             <View style={styles.mapPin}>
               <View style={styles.pinCircle}>
@@ -173,7 +228,7 @@ export default function VenueDetailsScreen() {
               </View>
             </View>
             <View style={styles.addressBadge}>
-              <Text style={styles.addressText}>Viktoriagade 8, 1655 Copenhagen</Text>
+              <Text style={styles.addressText}>{venue.address}</Text>
             </View>
           </View>
         </View>
@@ -182,11 +237,11 @@ export default function VenueDetailsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Travel Times for Group</Text>
           <View style={styles.participantList}>
-            {PARTICIPANTS.map(p => (
+            {participants.map(p => (
               <View key={p.id} style={styles.participantRow}>
                 <View style={styles.participantInfo}>
                   <View style={styles.avatarWrapper}>
-                    <Image source={{ uri: p.image }} style={styles.participantAvatar} />
+                    <Image source={{ uri: p.profile?.avatarUrl || `https://i.pravatar.cc/150?u=${p.id}` }} style={styles.participantAvatar} />
                     {p.status === 'arrived' && (
                       <View style={styles.statusCheck}>
                         <MaterialIcons name="check" size={10} color="white" />
@@ -194,8 +249,10 @@ export default function VenueDetailsScreen() {
                     )}
                   </View>
                   <View>
-                    <Text style={styles.participantName}>{p.name}</Text>
-                    <Text style={styles.participantStatusDetails}>{p.statusText}</Text>
+                    <Text style={styles.participantName}>{p.profile?.name || p.name}</Text>
+                    <Text style={styles.participantStatusDetails}>
+                      {p.status === 'arrived' ? 'Arrived' : `${p.mode.charAt(0).toUpperCase() + p.mode.slice(1)} • ${p.etaMinutes || 15} min away`}
+                    </Text>
                   </View>
                 </View>
                 
@@ -203,13 +260,9 @@ export default function VenueDetailsScreen() {
                   <View style={[styles.statusPill, { backgroundColor: colors['tertiary-fixed'] }]}>
                     <Text style={[styles.statusPillText, { color: colors['on-tertiary-fixed'] }]}>ARRIVED</Text>
                   </View>
-                ) : p.status === 'late' ? (
-                  <View style={[styles.statusPill, { backgroundColor: colors['error-container'] }]}>
-                    <Text style={[styles.statusPillText, { color: colors['on-error-container'] }]}>{p.lateTime.toUpperCase()}</Text>
-                  </View>
                 ) : (
                   <View style={styles.etaContainer}>
-                    <Text style={styles.etaTime}>{p.eta}</Text>
+                    <Text style={styles.etaTime}>{p.etaMinutes || 15}m</Text>
                     <Text style={styles.etaLabel}>ETA</Text>
                   </View>
                 )}
@@ -221,18 +274,31 @@ export default function VenueDetailsScreen() {
         {/* Reviews Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>What guests say</Text>
-          <View style={styles.reviewCard}>
-            <Text style={styles.reviewQuote}>
-              "The atmosphere is unmatched for a group meetup. Despite being busy, the flow of the space feels curated and never cramped."
-            </Text>
-            <View style={styles.reviewFooter}>
-              <View style={styles.reviewAvatars}>
-                <Image source={{ uri: 'https://i.pravatar.cc/50?u=1' }} style={styles.smallAvatar} />
-                <Image source={{ uri: 'https://i.pravatar.cc/50?u=2' }} style={[styles.smallAvatar, { marginLeft: -8 }]} />
-              </View>
-              <Text style={styles.reviewCount}>+420 local reviews</Text>
+          {isLoading ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+            <View style={styles.reviewList}>
+              {details?.reviews?.map((review: any) => (
+                <View key={review.id} style={styles.reviewCard}>
+                  <View style={styles.reviewHeader}>
+                    <Text style={styles.reviewAuthor}>{review.author}</Text>
+                    <View style={styles.reviewRating}>
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <MaterialIcons 
+                          key={i} 
+                          name="star" 
+                          size={14} 
+                          color={i < review.rating ? "#FFD700" : colors.outline} 
+                        />
+                      ))}
+                    </View>
+                  </View>
+                  <Text style={styles.reviewQuote}>"{review.text}"</Text>
+                  <Text style={styles.reviewDate}>{review.date}</Text>
+                </View>
+              ))}
             </View>
-          </View>
+          )}
         </View>
       </ScrollView>
 
@@ -382,6 +448,24 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginBottom: 24,
   },
+  googleMapsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'white',
+    paddingVertical: 12,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors['outline-variant'] + '30',
+    gap: 10,
+    marginBottom: 24,
+    ...shadows.sm,
+  },
+  googleMapsButtonText: {
+    fontFamily: typography.fontFamily.bodySemiBold,
+    fontSize: 14,
+    color: colors.primary,
+  },
   miniMapContainer: {
     height: 120,
     borderRadius: radii.xl,
@@ -508,12 +592,36 @@ const styles = StyleSheet.create({
     color: colors.outline,
     letterSpacing: 1,
   },
+  reviewList: {
+    gap: 16,
+  },
   reviewCard: {
     backgroundColor: colors['surface-container-low'],
     padding: 24,
     borderRadius: radii.xl,
     borderWidth: 1,
     borderColor: colors['outline-variant'] + '15',
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  reviewAuthor: {
+    fontFamily: typography.fontFamily.headlineBold,
+    fontSize: 14,
+    color: colors['on-surface'],
+  },
+  reviewRating: {
+    flexDirection: 'row',
+    gap: 2,
+  },
+  reviewDate: {
+    fontFamily: typography.fontFamily.label,
+    fontSize: 11,
+    color: colors.outline,
+    marginTop: 8,
   },
   reviewQuote: {
     fontFamily: typography.fontFamily.body,

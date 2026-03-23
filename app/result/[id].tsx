@@ -52,7 +52,7 @@ export default function ResultScreen() {
               <MaterialIcons name="arrow-back" size={24} color={colors['on-surface']} />
             </TouchableOpacity>
             <View style={styles.heroBadge}>
-              <MaterialCommunityIcons name="auto-awesome" size={16} color="white" />
+              <MaterialCommunityIcons name={'auto-awesome' as never} size={16} color="white" />
               <Text style={styles.heroBadgeText}>BEST MATCH</Text>
             </View>
             <TouchableOpacity style={styles.circleButton}>
@@ -93,17 +93,17 @@ export default function ResultScreen() {
           
           <View style={styles.analysisRow}>
             <View style={styles.analysisItem}>
-              <Text style={styles.analysisValue}>{bestVenue.averageTravelTime}m</Text>
+              <Text style={styles.analysisValue}>{Math.round(bestVenue.averageMinutes)}m</Text>
               <Text style={styles.analysisLabel}>Average</Text>
             </View>
             <View style={styles.analysisDivider} />
             <View style={styles.analysisItem}>
-              <Text style={styles.analysisValue}>{bestVenue.maxTravelTime}m</Text>
+              <Text style={styles.analysisValue}>{Math.round(bestVenue.maxMinutes)}m</Text>
               <Text style={styles.analysisLabel}>Max Travel</Text>
             </View>
             <View style={styles.analysisDivider} />
             <View style={styles.analysisItem}>
-              <Text style={styles.analysisValue}>±{Math.round(bestVenue.maxTravelTime - bestVenue.averageTravelTime)}m</Text>
+              <Text style={styles.analysisValue}>±{Math.round(bestVenue.maxMinutes - bestVenue.averageMinutes)}m</Text>
               <Text style={styles.analysisLabel}>Variance</Text>
             </View>
           </View>
@@ -118,10 +118,15 @@ export default function ResultScreen() {
               return (
                 <View key={p.id} style={styles.travelItem}>
                   <View style={styles.travelUser}>
-                    <Image source={{ uri: p.profile.avatarUrl }} style={styles.travelAvatar} />
+                    <Image
+                      source={{ uri: p.profile?.avatarUrl || `https://i.pravatar.cc/150?u=${p.userId}` }}
+                      style={styles.travelAvatar}
+                    />
                     <View>
-                      <Text style={styles.travelName}>{p.profile.name}</Text>
-                      <Text style={styles.travelMode}>{p.preferences?.transportMode || 'Public Transit'}</Text>
+                      <Text style={styles.travelName}>{p.profile?.name ?? p.name}</Text>
+                      <Text style={styles.travelMode}>
+                        {p.mode.charAt(0).toUpperCase() + p.mode.slice(1)}
+                      </Text>
                     </View>
                   </View>
                   <View style={styles.travelTimeBadge}>
@@ -151,7 +156,7 @@ export default function ResultScreen() {
                   <View style={styles.altStats}>
                     <Text style={styles.altStatText}>{venue.fairnessScore}% Fair</Text>
                     <Text style={styles.altBullet}>•</Text>
-                    <Text style={styles.altStatText}>{venue.averageTravelTime}m avg</Text>
+                    <Text style={styles.altStatText}>{Math.round(venue.averageMinutes)}m avg</Text>
                   </View>
                 </View>
               </TouchableOpacity>

@@ -32,7 +32,7 @@ export const VenueCard = ({ venue, onPress }: VenueCardProps) => {
         <View style={styles.statsContainer}>
           <View style={styles.statBadge}>
             <MaterialIcons name="schedule" size={12} color={colors.primary} />
-            <Text style={styles.statText}>{venue.averageTravelTime}m avg</Text>
+            <Text style={styles.statText}>{Math.round(venue.averageMinutes)}m avg</Text>
           </View>
           <View style={[styles.statBadge, styles.fairnessBadge]}>
             <MaterialIcons name="balance" size={12} color={colors.tertiary} />

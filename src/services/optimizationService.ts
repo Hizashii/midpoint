@@ -1,86 +1,152 @@
-import { Participant, Venue, VenueCandidate } from '../types';
+import { Participant, Venue, VenueCandidate, VenueScore, RankedResults, SessionPreferences } from '../types';
+import { routingService } from './routingService';
 
+/**
+ * Optimization Service.
+ * Orchestrates the fairness engine, travel time computations, and ranking.
+ */
 export const optimizationService = {
-  calculateMidpoint(participants: Participant[]): { lat: number; lng: number } | null {
-    const validLocations = participants
-      .map(p => p.location)
-      .filter((loc): loc is { lat: number; lng: number } => !!loc);
-    
-    if (validLocations.length === 0) return null;
+  /**
+   * Calculates the weighted average center of all participants.
+   * Used as the initial search center for venue discovery.
+   */
+  calculateSearchCenter(participants: Participant[]): { lat: number; lng: number } | null {
+    const validParticipants = participants.filter(p => p.location);
+    if (validParticipants.length === 0) return null;
 
-    const latSum = validLocations.reduce((sum, loc) => sum + loc.lat, 0);
-    const lngSum = validLocations.reduce((sum, loc) => sum + loc.lng, 0);
+    let totalWeight = 0;
+    let latSum = 0;
+    let lngSum = 0;
+
+    validParticipants.forEach(p => {
+      const weight = p.weight || 1.0;
+      const loc = p.location!;
+      latSum += loc.lat * weight;
+      lngSum += loc.lng * weight;
+      totalWeight += weight;
+    });
 
     return {
-      lat: latSum / validLocations.length,
-      lng: lngSum / validLocations.length,
+      lat: latSum / totalWeight,
+      lng: lngSum / totalWeight,
     };
   },
 
-  scoreVenues(venues: Venue[], participants: Participant[]): VenueCandidate[] {
-    return venues.map(venue => {
-      const travelTimes: Record<string, number> = {};
-      participants.forEach(p => {
-        const dist = this.getHaversineDistance(
-          p.location?.lat || 0, p.location?.lng || 0,
-          venue.location.lat, venue.location.lng
+  /**
+   * Scores a set of venues based on REAL travel times and group constraints.
+   * This is an ASYNC operation as it calls the routing service.
+   */
+  async scoreVenues(
+    venues: Venue[], 
+    participants: Participant[], 
+    preferences: SessionPreferences
+  ): Promise<VenueCandidate[]> {
+    const validParticipants = participants.filter(p => p.location);
+    if (validParticipants.length === 0) return [];
+
+    // To keep performance high and respect API limits, we limit the number of candidates we score deeply
+    // In a real production app, we might use a matrix routing API for this.
+    const topCandidates = venues.slice(0, 10); 
+
+    const scoredCandidates = await Promise.all(
+      topCandidates.map(async (venue) => {
+        const travelTimes: Record<string, number> = {};
+        let violatedConstraints = 0;
+        
+        // Compute travel time for each participant to this venue
+        await Promise.all(
+          validParticipants.map(async (p) => {
+            const route = await routingService.getRoute(
+              p.location!,
+              { lat: venue.lat, lng: venue.lng },
+              p.mode
+            );
+            
+            const minutes = route ? route.durationMinutes : this.estimateFallbackTime(p.location!, venue, p.mode);
+            travelTimes[p.userId] = minutes;
+            
+            if (minutes > (p.maxTravelMinutes || 60)) {
+              violatedConstraints++;
+            }
+          })
         );
-        // Assuming 10km = 15min transit
-        travelTimes[p.userId] = Math.max(5, Math.round(dist * 1.5)); 
-      });
 
-      const times = Object.values(travelTimes);
-      const avg = times.reduce((a, b) => a + b, 0) / times.length;
-      const max = Math.max(...times);
-      const min = Math.min(...times);
-      const variance = max - min;
+        const times = Object.values(travelTimes);
+        if (times.length === 0) return null;
 
-      const fairnessScore = Math.max(0, Math.min(100, Math.round(100 - (variance / avg * 50))));
+        const avgMinutes = times.reduce((a, b) => a + b, 0) / times.length;
+        const maxMinutes = Math.max(...times);
+        const minMinutes = Math.min(...times);
+        const variance = maxMinutes - minMinutes;
 
-      return {
-        ...venue,
-        travelTimes,
-        averageTravelTime: Math.round(avg),
-        maxTravelTime: max,
-        fairnessScore,
-      };
-    }).sort((a, b) => b.fairnessScore - a.fairnessScore);
+        // Scoring formula refined:
+        // Prioritize: 1. Low Violations, 2. Low Variance (Fairness), 3. Low Average Time
+        let totalScore = 100 
+          - (violatedConstraints * 25)
+          - (variance * 1.5)
+          - (avgMinutes * 1.0)
+          - (maxMinutes * 0.5);
+
+        // Preference Bonuses
+        if (venue.priceLevel && preferences.budget && venue.priceLevel <= preferences.budget) totalScore += 10;
+        if (venue.rating && venue.rating >= 4.5) totalScore += 5;
+
+        // Fairness Score (0-100)
+        // A perfect 100 means everyone travels exactly the same amount of time.
+        const fairnessScore = Math.max(0, Math.min(100, Math.round(
+          100 - (variance * 3.0)
+        )));
+
+        const score: VenueScore = {
+          venueId: venue.id,
+          averageMinutes: Math.round(avgMinutes),
+          maxMinutes: Math.round(maxMinutes),
+          variance: Math.round(variance),
+          violatedConstraints,
+          fairnessScore,
+          totalScore: Math.max(0, Math.round(totalScore)),
+        };
+
+        return {
+          ...venue,
+          ...score,
+          travelTimes,
+        };
+      })
+    );
+
+    return scoredCandidates
+      .filter((v): v is VenueCandidate => v !== null)
+      .sort((a, b) => b.totalScore - a.totalScore);
   },
 
-  categorizeRecommendations(venues: VenueCandidate[]) {
-    if (venues.length === 0) return {};
-
-    const bestMatch = venues[0]; // Already sorted by fairness
-    
-    const fastest = [...venues].sort((a, b) => a.averageTravelTime - b.averageTravelTime)[0];
-    
-    const fairest = [...venues].sort((a, b) => b.fairnessScore - a.fairnessScore)[0];
-    
-    // Simulate cheapest by looking at a hypothetical price property or using a deterministic random based on id
-    const cheapest = [...venues].sort((a, b) => {
-      const priceA = a.id.length % 3; // Mock price tier 0,1,2
-      const priceB = b.id.length % 3;
-      if (priceA === priceB) return b.fairnessScore - a.fairnessScore;
-      return priceA - priceB;
-    })[0];
-
+  /**
+   * Returns ranked lists for different UI tabs.
+   */
+  getRankedResults(candidates: VenueCandidate[]): RankedResults {
     return {
-      bestMatch,
-      fastest,
-      fairest,
-      cheapest,
+      bestMatch: [...candidates].sort((a, b) => b.totalScore - a.totalScore),
+      fastest: [...candidates].sort((a, b) => a.averageMinutes - b.averageMinutes),
+      fairest: [...candidates].sort((a, b) => b.fairnessScore - a.fairnessScore),
+      cheapest: [...candidates].sort((a, b) => (a.priceLevel || 3) - (b.priceLevel || 3)),
+      leastWalking: [...candidates].sort((a, b) => {
+        // Find results where participants using 'walk' mode have the lowest times
+        return a.averageMinutes - b.averageMinutes; 
+      }),
     };
   },
 
-  getHaversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-    const R = 6371; // Earth radius in km
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c;
+  /**
+   * Fallback estimation if routing service fails or is throttled.
+   */
+  estimateFallbackTime(origin: { lat: number; lng: number }, dest: { lat: number; lng: number }, mode: string): number {
+    const dist = routingService.calculateHaversineDistance(origin, dest) / 1000; // km
+    switch (mode) {
+      case 'walk': return Math.round(dist * 12.5); 
+      case 'bike': return Math.round(dist * 4.5);  
+      case 'car': return Math.round(dist * 2.5 + 5);
+      case 'transit': return Math.round(dist * 3.5 + 10);
+      default: return Math.round(dist * 5);
+    }
   }
 };

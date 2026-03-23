@@ -10,10 +10,10 @@ import { meetupService } from '../../src/services/meetupService';
 import { PlaceSearchBar } from '../../src/components/PlaceSearchBar';
 
 const TRANSPORT_MODES = [
-  { id: 'driving', label: 'Drive', icon: 'car-hatchback' },
+  { id: 'car', label: 'Drive', icon: 'car-hatchback' },
   { id: 'transit', label: 'Transit', icon: 'train-variant' },
-  { id: 'walking', label: 'Walk', icon: 'walk' },
-  { id: 'cycling', label: 'Cycle', icon: 'bike' },
+  { id: 'walk', label: 'Walk', icon: 'walk' },
+  { id: 'bike', label: 'Cycle', icon: 'bike' },
 ];
 
 const TRAVEL_TIMES = [15, 30, 45, 60];
@@ -24,6 +24,7 @@ export default function ParticipantSetupScreen() {
   const [isFlexible, setIsFlexible] = useState(false);
   const [location, setLocation] = useState<{ lat: number; lng: number; address: string } | null>(null);
   const [isLocating, setIsLocating] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
   const user = useAuthStore(state => state.user);
   const { id: sessionId } = useLocalSearchParams();
 
@@ -46,17 +47,39 @@ export default function ParticipantSetupScreen() {
     }
   };
 
-  const handleStart = async () => {
-    if (!user || !location || !sessionId) return;
+  const handleJoin = async (selectedMode?: string, selectedTime?: number) => {
+    if (!user || !location || !sessionId || isJoining) return;
+    
+    setIsJoining(true);
+    try {
+      await meetupService.updateParticipantLocation(
+        sessionId as string,
+        user.id,
+        location.lat,
+        location.lng,
+        selectedMode || transportMode,
+        selectedTime || maxTime
+      );
+      router.push(`/session/${sessionId}`);
+    } catch (error) {
+      console.error("Failed to join:", error);
+    } finally {
+      setIsJoining(false);
+    }
+  };
 
-    await meetupService.updateParticipantLocation(
-      sessionId as string,
-      user.id,
-      location.lat,
-      location.lng
-    );
+  const onTransportSelect = (mode: string) => {
+    setTransportMode(mode);
+    if (location) {
+      handleJoin(mode, maxTime);
+    }
+  };
 
-    router.push(`/session/${sessionId}`);
+  const onTimeSelect = (time: number) => {
+    setMaxTime(time);
+    if (location) {
+      handleJoin(transportMode, time);
+    }
   };
 
   return (
@@ -80,7 +103,7 @@ export default function ParticipantSetupScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.label}>STARTING POINT</Text>
+          <Text style={styles.label}>1. STARTING POINT</Text>
           <PlaceSearchBar 
             onPlaceSelect={(res) => setLocation(res)} 
             placeholder="Search for an address..."
@@ -95,7 +118,7 @@ export default function ParticipantSetupScreen() {
           <TouchableOpacity 
             style={[styles.locationButton, location && { borderColor: colors.primary }]} 
             onPress={handleGetLocation}
-            disabled={isLocating}
+            disabled={isLocating || isJoining}
             activeOpacity={0.7}
           >
             {isLocating ? (
@@ -118,8 +141,8 @@ export default function ParticipantSetupScreen() {
           )}
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.label}>TRANSPORT MODE</Text>
+        <View style={[styles.section, !location && { opacity: 0.5 }]}>
+          <Text style={styles.label}>2. TRANSPORT MODE & JOIN</Text>
           <View style={styles.transportGrid}>
             {TRANSPORT_MODES.map((mode) => (
               <TouchableOpacity
@@ -128,7 +151,8 @@ export default function ParticipantSetupScreen() {
                   styles.modeCard,
                   transportMode === mode.id && styles.modeCardActive
                 ]}
-                onPress={() => setTransportMode(mode.id)}
+                onPress={() => onTransportSelect(mode.id)}
+                disabled={!location || isJoining}
                 activeOpacity={0.7}
               >
                 <MaterialCommunityIcons 
@@ -145,8 +169,8 @@ export default function ParticipantSetupScreen() {
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.label}>MAX TRAVEL TIME</Text>
+        <View style={[styles.section, !location && { opacity: 0.5 }]}>
+          <Text style={styles.label}>OR CHOOSE MAX TIME</Text>
           <View style={styles.timeGrid}>
             {TRAVEL_TIMES.map((time) => (
               <TouchableOpacity
@@ -155,7 +179,8 @@ export default function ParticipantSetupScreen() {
                   styles.timeCard,
                   maxTime === time && styles.timeCardActive
                 ]}
-                onPress={() => setMaxTime(time)}
+                onPress={() => onTimeSelect(time)}
+                disabled={!location || isJoining}
                 activeOpacity={0.7}
               >
                 <Text style={[
@@ -169,6 +194,7 @@ export default function ParticipantSetupScreen() {
           <TouchableOpacity 
             style={styles.flexibleCard} 
             onPress={() => setIsFlexible(!isFlexible)}
+            disabled={!location || isJoining}
             activeOpacity={0.8}
           >
             <View style={[styles.checkbox, isFlexible && styles.checkboxActive]}>
@@ -181,17 +207,15 @@ export default function ParticipantSetupScreen() {
           </TouchableOpacity>
         </View>
         
+        {isJoining && (
+          <View style={styles.joiningOverlay}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={styles.joiningText}>Joining Session...</Text>
+          </View>
+        )}
+
         <View style={{ height: 40 }} />
       </ScrollView>
-
-      <SafeAreaView style={styles.footer} edges={['bottom']}>
-        <PrimaryButton 
-          title="Join Meetup Room" 
-          onPress={handleStart}
-          disabled={!location}
-          style={!location && { opacity: 0.5 }}
-        />
-      </SafeAreaView>
     </View>
   );
 }
@@ -390,12 +414,17 @@ const styles = StyleSheet.create({
     color: colors.outline,
     marginTop: 2,
   },
-  footer: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 24,
-    backgroundColor: colors.background,
-    borderTopWidth: 1,
-    borderTopColor: colors['surface-container-low'],
+  joiningOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 100,
+  },
+  joiningText: {
+    marginTop: 16,
+    fontFamily: typography.fontFamily.headlineBold,
+    fontSize: 16,
+    color: colors.primary,
   },
 });

@@ -1,30 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Platform, Dimensions, ActivityIndicator } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Platform, ActivityIndicator, Alert, Image } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { colors, typography, radii, spacing, shadows } from '../../src/lib/theme';
 import { PrimaryButton } from '../../src/components/PrimaryButton';
-import { AvatarStack } from '../../src/components/AvatarStack';
-import MapView from '../../src/components/MapView';
+import MapView, { Marker } from '../../src/components/MapView';
 import { locationService } from '../../src/services/locationService';
-import { useMeetupStore } from '../../src/store/meetupStore';
-
-const TRANSPORT_MODES = [
-  { id: 'walk', icon: 'directions-walk', label: 'Walk' },
-  { id: 'bike', icon: 'directions-bike', label: 'Bike' },
-  { id: 'transit', icon: 'train', label: 'Transit' },
-  { id: 'car', icon: 'directions-car', label: 'Car' },
-];
+import { meetupService } from '../../src/services/meetupService';
+import { useAuthStore } from '../../src/store/authStore';
 
 export default function SetupTripScreen() {
   const params = useLocalSearchParams();
-  const meetupType = params.type as string || 'Coffee';
+  const user = useAuthStore(state => state.user);
+  const meetupType = (params.type as string) || 'coffee';
   
-  const [location, setLocation] = useState('');
+  const [address, setAddress] = useState('');
   const [isDetecting, setIsDetecting] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   const [selectedTransport, setSelectedTransport] = useState('walk');
   const [maxTravelTime, setMaxTravelTime] = useState(30);
-  const [isSchedulePrioritized, setIsSchedulePrioritized] = useState(true);
   
   const [region, setRegion] = useState({
     latitude: params.lat ? parseFloat(params.lat as string) : 55.4765,
@@ -38,13 +32,11 @@ export default function SetupTripScreen() {
     try {
       const loc = await locationService.getCurrentLocation();
       if (loc) {
-        setRegion(prev => ({
-          ...prev,
-          latitude: loc.coords.latitude,
-          longitude: loc.coords.longitude,
-        }));
-        const address = await locationService.reverseGeocode(loc.coords.latitude, loc.coords.longitude);
-        setLocation(address || 'Current Location');
+        const lat = loc.coords.latitude;
+        const lng = loc.coords.longitude;
+        setRegion(prev => ({ ...prev, latitude: lat, longitude: lng }));
+        const addr = await locationService.reverseGeocode(lat, lng);
+        setAddress(addr || 'Current Location');
       }
     } catch (error) {
       console.error(error);
@@ -53,32 +45,52 @@ export default function SetupTripScreen() {
     }
   };
 
-  const handleJoin = () => {
-    // Create the session in our global state
-    useMeetupStore.getState().createSession({
-      title: `${meetupType.charAt(0).toUpperCase() + meetupType.slice(1)} at Midpoint`,
-      type: meetupType,
-      date: new Date().toISOString(),
-      participants: [
-        {
-          id: 'p_me',
-          userId: 'user_1',
-          profile: { id: 'user_1', name: 'You', avatarUrl: 'https://i.pravatar.cc/150?u=me' },
-          location: { lat: region.latitude, lng: region.longitude },
-          status: 'ready',
-        },
-        {
-          id: 'p_2',
-          userId: 'user_2',
-          profile: { id: 'user_2', name: 'Sarah', avatarUrl: 'https://i.pravatar.cc/150?u=sarah' },
-          location: { lat: region.latitude + 0.01, lng: region.longitude - 0.01 },
-          status: 'ready',
-        }
-      ]
-    });
-    
-    router.push('/meetup/compare');
+  const handleCreateAndJoin = async () => {
+    if (!user) {
+      Alert.alert("Sign In Required", "You must be signed in to create a meetup.");
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      // 1. Create the session record
+      const sessionTitle = `${meetupType.charAt(0).toUpperCase() + meetupType.slice(1)} Meetup`;
+      const session = await meetupService.createSession(
+        sessionTitle,
+        meetupType as any,
+        user.id
+      );
+
+      if (session) {
+        // 2. Update organizer's location/mode within the session
+        await meetupService.updateParticipantLocation(
+          session.id,
+          user.id,
+          region.latitude,
+          region.longitude,
+          selectedTransport,
+          maxTravelTime
+        );
+
+        // 3. Navigate to the live session room
+        router.push(`/session/${session.id}`);
+      } else {
+        throw new Error("Failed to create session");
+      }
+    } catch (error) {
+      console.error("Setup Error:", error);
+      Alert.alert("Error", "Could not create session. Please try again.");
+    } finally {
+      setIsCreating(false);
+    }
   };
+
+  const TRANSPORT_MODES = [
+    { id: 'walk', icon: 'directions-walk', label: 'Walk' },
+    { id: 'bike', icon: 'directions-bike', label: 'Bike' },
+    { id: 'transit', icon: 'train', label: 'Transit' },
+    { id: 'car', icon: 'directions-car', label: 'Car' },
+  ];
 
   return (
     <View style={styles.container}>
@@ -92,16 +104,24 @@ export default function SetupTripScreen() {
           </TouchableOpacity>
         ),
         headerRight: () => (
-          <TouchableOpacity style={styles.avatarContainer}>
-             <MaterialCommunityIcons name="account-circle" size={32} color={colors['primary-container']} />
-          </TouchableOpacity>
+          <View style={styles.headerRight}>
+            <View style={styles.avatarContainer}>
+               <Image source={{ uri: user?.avatarUrl || 'https://i.pravatar.cc/150?u=me' }} style={styles.avatarImage} />
+            </View>
+          </View>
         )
       }} />
 
       <MapView 
         style={styles.map} 
         initialRegion={region}
-      />
+      >
+        <Marker coordinate={{ latitude: region.latitude, longitude: region.longitude }}>
+          <View style={styles.pin}>
+            <MaterialIcons name="location-on" size={24} color={colors.primary} />
+          </View>
+        </Marker>
+      </MapView>
 
       <ScrollView 
         style={styles.contentOverlay}
@@ -109,34 +129,25 @@ export default function SetupTripScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Session Header Card */}
+        {/* Step Info */}
         <View style={styles.sessionCard}>
-          <View style={styles.sessionInfo}>
-            <View>
-              <Text style={styles.sessionTitle}>{meetupType.charAt(0).toUpperCase() + meetupType.slice(1)} Setup</Text>
-              <Text style={styles.sessionSubtitle}>Organized by Sarah M.</Text>
-            </View>
-            <AvatarStack 
-              urls={[
-                'https://i.pravatar.cc/150?u=sarah',
-                'https://i.pravatar.cc/150?u=james',
-                '',
-                ''
-              ]} 
-              size={32} 
-            />
+          <View style={styles.progressHeader}>
+            <Text style={styles.stepLabel}>STEP 2 OF 3</Text>
+            <View style={styles.progressBar}><View style={styles.progressFill} /></View>
           </View>
+          <Text style={styles.sessionTitle}>Set your origin</Text>
+          <Text style={styles.sessionSubtitle}>We'll find the fairest midpoint for everyone.</Text>
         </View>
 
-        {/* Location Search */}
+        {/* Location Input */}
         <View style={styles.section}>
           <View style={styles.searchInputContainer}>
-            <MaterialIcons name="location-on" size={24} color={colors.primary} style={styles.searchIcon} />
+            <MaterialIcons name="search" size={22} color={colors.primary} style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Enter starting location"
-              value={location}
-              onChangeText={setLocation}
+              placeholder="Enter starting address..."
+              value={address}
+              onChangeText={setAddress}
               placeholderTextColor={colors.outline}
             />
           </View>
@@ -144,19 +155,20 @@ export default function SetupTripScreen() {
             style={styles.useLocationButton} 
             onPress={handleUseCurrentLocation}
             disabled={isDetecting}
+            activeOpacity={0.7}
           >
             {isDetecting ? (
               <ActivityIndicator size="small" color={colors.primary} />
             ) : (
               <>
-                <MaterialIcons name="my-location" size={18} color={colors['on-surface']} />
-                <Text style={styles.useLocationText}>Use current location</Text>
+                <MaterialIcons name="my-location" size={18} color={colors.primary} />
+                <Text style={styles.useLocationText}>Use GPS current location</Text>
               </>
             )}
           </TouchableOpacity>
         </View>
 
-        {/* Preferences Panel */}
+        {/* Preferences */}
         <View style={styles.preferencesCard}>
           <View style={styles.prefSection}>
             <Text style={styles.prefLabel}>TRANSPORT MODE</Text>
@@ -168,14 +180,15 @@ export default function SetupTripScreen() {
                     key={mode.id}
                     style={[styles.transportButton, isSelected && styles.transportButtonActive]}
                     onPress={() => setSelectedTransport(mode.id)}
+                    activeOpacity={0.8}
                   >
                     <MaterialIcons 
                       name={mode.icon as any} 
                       size={24} 
-                      color={isSelected ? 'white' : colors['on-surface']} 
+                      color={isSelected ? 'white' : colors.outline} 
                     />
                     <Text style={[styles.transportLabel, isSelected && styles.transportLabelActive]}>
-                      {mode.label.toUpperCase()}
+                      {mode.label}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -192,30 +205,21 @@ export default function SetupTripScreen() {
               <View style={[styles.sliderFill, { width: `${(maxTravelTime / 60) * 100}%` }]} />
               <View style={[styles.sliderThumb, { left: `${(maxTravelTime / 60) * 100}%` }]} />
             </View>
-          </View>
-
-          <View style={styles.timingRow}>
-            <View>
-              <Text style={styles.prefLabel}>SCHEDULE TYPE</Text>
-              <Text style={styles.timingSubtext}>Prioritize meeting exactly at 12:30</Text>
+            <View style={styles.sliderLabels}>
+              <Text style={styles.rangeLabel}>15m</Text>
+              <Text style={styles.rangeLabel}>60m+</Text>
             </View>
-            <TouchableOpacity 
-              style={[styles.toggle, isSchedulePrioritized && styles.toggleActive]}
-              onPress={() => setIsSchedulePrioritized(!isSchedulePrioritized)}
-            >
-              <View style={[styles.toggleThumb, isSchedulePrioritized && styles.toggleThumbActive]}>
-                 {isSchedulePrioritized && <MaterialCommunityIcons name="timer-outline" size={12} color={colors.primary} />}
-              </View>
-            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
 
-      {/* Footer */}
+      {/* Footer Action */}
       <View style={styles.footer}>
         <PrimaryButton 
-          title="Join Session" 
-          onPress={handleJoin}
+          title={isCreating ? "Creating Room..." : "Create Meetup Room"} 
+          onPress={handleCreateAndJoin}
+          disabled={isCreating}
+          loading={isCreating}
         />
       </View>
     </View>
@@ -229,61 +233,90 @@ const styles = StyleSheet.create({
   },
   map: {
     ...StyleSheet.absoluteFillObject,
-    opacity: 0.4,
+    opacity: 0.5,
   },
-  headerLogo: {
-    flexDirection: 'row',
+  headerButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'white',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
     marginLeft: 16,
-    paddingVertical: 8,
+    ...shadows.md,
   },
-  headerTitleText: {
-    fontFamily: typography.fontFamily.headlineExtraBold,
-    fontSize: 22,
-    color: colors['on-surface'],
-    letterSpacing: -1,
+  headerRight: {
+    marginRight: 16,
   },
   avatarContainer: {
-    marginRight: 16,
-    borderWidth: 2,
-    borderColor: colors['surface-container-lowest'],
+    width: 40,
+    height: 40,
     borderRadius: 20,
-    backgroundColor: colors['surface-container-highest'],
+    borderWidth: 2,
+    borderColor: 'white',
+    overflow: 'hidden',
+    ...shadows.sm,
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+  },
+  pin: {
+    padding: 8,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    ...shadows.lg,
   },
   contentOverlay: {
     flex: 1,
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     marginTop: 100,
   },
   scrollContent: {
-    paddingBottom: 140,
-    gap: 24,
+    paddingBottom: 160,
+    gap: 20,
   },
   sessionCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: radii.xl,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: radii['2xl'],
     padding: 24,
-    ...shadows.md,
-    ...Platform.select({
-      ios: { backdropFilter: 'blur(20px)' },
-    } as any),
+    ...shadows.lg,
   },
-  sessionInfo: {
+  progressHeader: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  stepLabel: {
+    fontFamily: typography.fontFamily.label,
+    fontSize: 10,
+    fontWeight: '800',
+    color: colors.primary,
+    letterSpacing: 1.5,
+  },
+  progressBar: {
+    width: 60,
+    height: 4,
+    backgroundColor: colors['surface-container-high'],
+    borderRadius: 2,
+  },
+  progressFill: {
+    width: '66%',
+    height: '100%',
+    backgroundColor: colors.primary,
+    borderRadius: 2,
   },
   sessionTitle: {
-    fontFamily: typography.fontFamily.headlineBold,
-    fontSize: 24,
+    fontFamily: typography.fontFamily.headlineExtraBold,
+    fontSize: 26,
     color: colors['on-surface'],
     letterSpacing: -0.5,
   },
   sessionSubtitle: {
     fontFamily: typography.fontFamily.body,
-    fontSize: 14,
-    color: colors['on-surface-variant'],
+    fontSize: 15,
+    color: colors.outline,
     marginTop: 4,
   },
   section: {
@@ -295,8 +328,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors['surface-container-lowest'],
     borderRadius: radii.xl,
     paddingHorizontal: 16,
-    height: 56,
-    ...shadows.md,
+    height: 60,
+    ...shadows.lg,
+    borderWidth: 1,
+    borderColor: colors['outline-variant'] + '15',
   },
   searchIcon: {
     marginRight: 12,
@@ -313,32 +348,29 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     backgroundColor: colors['surface-container-low'],
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderRadius: radii.xl,
   },
   useLocationText: {
     fontFamily: typography.fontFamily.bodySemiBold,
     fontSize: 14,
-    color: colors['on-surface'],
+    color: colors.primary,
   },
   preferencesCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: radii.xl,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: radii['2xl'],
     padding: 24,
-    gap: 32,
-    ...shadows.md,
-    ...Platform.select({
-      ios: { backdropFilter: 'blur(20px)' },
-    } as any),
+    gap: 28,
+    ...shadows.lg,
   },
   prefSection: {
     gap: 16,
   },
   prefLabel: {
     fontFamily: typography.fontFamily.headlineBold,
-    fontSize: 10,
-    color: colors['on-surface-variant'],
-    letterSpacing: 1.5,
+    fontSize: 11,
+    color: colors.outline,
+    letterSpacing: 1.2,
   },
   transportGrid: {
     flexDirection: 'row',
@@ -346,8 +378,8 @@ const styles = StyleSheet.create({
   },
   transportButton: {
     flex: 1,
-    aspectRatio: 1,
-    backgroundColor: colors['surface-container-high'],
+    height: 70,
+    backgroundColor: colors['surface-container-low'],
     borderRadius: radii.xl,
     alignItems: 'center',
     justifyContent: 'center',
@@ -355,12 +387,13 @@ const styles = StyleSheet.create({
   },
   transportButtonActive: {
     backgroundColor: colors.primary,
+    ...shadows.md,
   },
   transportLabel: {
     fontFamily: typography.fontFamily.label,
     fontSize: 10,
     fontWeight: '700',
-    color: colors['on-surface'],
+    color: colors.outline,
   },
   transportLabelActive: {
     color: 'white',
@@ -368,20 +401,21 @@ const styles = StyleSheet.create({
   sliderHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
+    alignItems: 'baseline',
   },
   timeValue: {
     fontFamily: typography.fontFamily.headlineExtraBold,
-    fontSize: 20,
+    fontSize: 22,
     color: colors.primary,
   },
   timeUnit: {
-    fontSize: 10,
+    fontSize: 11,
     fontFamily: typography.fontFamily.label,
+    color: colors.outline,
   },
   sliderTrack: {
     height: 6,
-    backgroundColor: colors['surface-container-highest'],
+    backgroundColor: colors['surface-container-high'],
     borderRadius: 3,
     position: 'relative',
     marginTop: 8,
@@ -399,57 +433,32 @@ const styles = StyleSheet.create({
     height: 24,
     backgroundColor: 'white',
     borderRadius: 12,
-    borderWidth: 4,
+    borderWidth: 5,
     borderColor: colors.primary,
     marginLeft: -12,
-    ...shadows.sm,
+    ...shadows.md,
   },
-  timingRow: {
+  sliderLabels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    marginTop: 8,
   },
-  timingSubtext: {
-    fontFamily: typography.fontFamily.body,
-    fontSize: 12,
-    color: colors['on-surface-variant'],
-    marginTop: 2,
-  },
-  toggle: {
-    width: 56,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors['surface-container-highest'],
-    padding: 4,
-  },
-  toggleActive: {
-    backgroundColor: colors.primary,
-  },
-  toggleThumb: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'white',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  toggleThumbActive: {
-    alignSelf: 'flex-end',
+  rangeLabel: {
+    fontFamily: typography.fontFamily.label,
+    fontSize: 10,
+    color: colors.outline,
   },
   footer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(253, 248, 248, 0.85)',
+    backgroundColor: 'rgba(253, 248, 248, 0.95)',
     paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
-    borderTopLeftRadius: radii['2xl'],
-    borderTopRightRadius: radii['2xl'],
-    ...shadows.lg,
-    ...Platform.select({
-      ios: { backdropFilter: 'blur(20px)' },
-    } as any),
+    paddingTop: 20,
+    paddingBottom: Platform.OS === 'ios' ? 44 : 24,
+    borderTopLeftRadius: radii['3xl'],
+    borderTopRightRadius: radii['3xl'],
+    ...shadows.ambient,
   },
 });

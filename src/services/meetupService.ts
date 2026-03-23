@@ -1,40 +1,35 @@
 import { supabase, isPlaceholder } from '../lib/supabase';
-import { MeetupSession, Participant } from '../types';
+import { MeetupSession, Participant, SessionCategory } from '../types';
 import { mockSessions } from '../data/mockData';
 
+// Local cache for non-Supabase demo sessions (e.g. initial onboarding)
 const demoSessionsCache: Record<string, MeetupSession> = {};
 
 export const meetupService = {
-  async createSession(title: string, type: string, creatorId: string): Promise<MeetupSession | null> {
+  /**
+   * Creates a new meetup session in Supabase.
+   */
+  async createSession(title: string, category: SessionCategory, organizerId: string): Promise<MeetupSession | null> {
     if (isPlaceholder) {
       const mockSessionId = `mock_${Date.now()}`;
       const newSession: MeetupSession = {
         id: mockSessionId,
+        organizerId,
         title,
-        type,
-        date: new Date().toISOString(),
-        status: 'planning',
+        preferences: { category },
+        createdAt: new Date().toISOString(),
+        state: 'waiting_for_participants',
         participants: [
           {
             id: 'p_me',
-            userId: creatorId,
-            profile: { id: creatorId, name: 'You (Esbjerg)', avatarUrl: 'https://i.pravatar.cc/150?u=me' },
+            userId: organizerId,
+            name: 'Organizer',
+            profile: { id: organizerId, name: 'Organizer', avatarUrl: `https://i.pravatar.cc/150?u=${organizerId}` },
             location: { lat: 55.4765, lng: 8.4515 },
             status: 'ready',
-          },
-          {
-            id: 'p_2',
-            userId: 'friend_1',
-            profile: { id: 'friend_1', name: 'Sarah (Esbjerg N)', avatarUrl: 'https://i.pravatar.cc/150?u=sarah' },
-            location: { lat: 55.4850, lng: 8.4400 },
-            status: 'ready',
-          },
-          {
-            id: 'p_3',
-            userId: 'friend_2',
-            profile: { id: 'friend_2', name: 'James (Esbjerg S)', avatarUrl: 'https://i.pravatar.cc/150?u=james' },
-            location: { lat: 55.4650, lng: 8.4650 },
-            status: 'ready',
+            mode: 'car',
+            maxTravelMinutes: 30,
+            weight: 1.0,
           }
         ],
       };
@@ -42,78 +37,87 @@ export const meetupService = {
       return newSession;
     }
 
-    const { data, error } = await supabase
-      .from('meetup_sessions')
-      .insert({
-        title,
-        type,
-        creator_id: creatorId,
-        status: 'planning',
-      })
-      .select()
-      .single();
+    try {
+      // 1. Insert session record
+      const { data, error } = await supabase
+        .from('meetup_sessions')
+        .insert({
+          title,
+          preferences: { category },
+          organizer_id: organizerId,
+          state: 'waiting_for_participants',
+        })
+        .select()
+        .single();
 
-    if (error) {
-      console.error('Error creating session:', error);
+      if (error) throw error;
+
+      // 2. Automatically add creator as the first participant
+      await this.joinSession(data.id, organizerId);
+
+      return this.transformSession(data);
+    } catch (error) {
+      console.error('Error creating real session:', error);
       return null;
     }
-
-    // Automatically add creator as participant
-    await this.joinSession(data.id, creatorId);
-
-    return {
-      id: data.id,
-      title: data.title,
-      type: data.type,
-      date: data.created_at,
-      status: data.status,
-      participants: [],
-    };
   },
 
-  async joinSession(sessionId: string, profileId: string): Promise<boolean> {
-    if (isPlaceholder) return true;
+  /**
+   * Joins an existing meetup session.
+   */
+  async joinSession(sessionId: string, userId: string): Promise<boolean> {
+    if (isPlaceholder || sessionId.startsWith('mock_')) return true;
 
-    const { error } = await supabase
-      .from('session_participants')
-      .insert({
-        session_id: sessionId,
-        profile_id: profileId,
-        status: 'ready',
-      });
+    try {
+      const { error } = await supabase
+        .from('session_participants')
+        .insert({
+          session_id: sessionId,
+          profile_id: userId,
+          status: 'setting_up',
+        });
 
-    if (error && error.code !== '23505') { // Ignore unique constraint violation (already joined)
-      console.error('Error joining session:', error);
+      // Ignore unique constraint error if user already joined
+      if (error && error.code !== '23505') throw error;
+      return true;
+    } catch (error) {
+      console.error('Error joining real session:', error);
       return false;
     }
-    return true;
   },
 
+  /**
+   * Fetches a single session with all participants.
+   */
   async getSession(sessionId: string): Promise<MeetupSession | null> {
     if (isPlaceholder || sessionId.startsWith('mock_')) {
-      return demoSessionsCache[sessionId] || mockSessions.find(s => s.id === sessionId) || mockSessions[0];
+      return demoSessionsCache[sessionId] || mockSessions.find(s => s.id === sessionId) || null;
     }
 
-    const { data, error } = await supabase
-      .from('meetup_sessions')
-      .select(`
-        *,
-        participants:session_participants(
+    try {
+      const { data, error } = await supabase
+        .from('meetup_sessions')
+        .select(`
           *,
-          profile:profiles(*)
-        )
-      `)
-      .eq('id', sessionId)
-      .single();
+          participants:session_participants(
+            *,
+            profile:profiles(*)
+          )
+        `)
+        .eq('id', sessionId)
+        .single();
 
-    if (error) {
-      console.error('Error fetching session:', error);
-      return mockSessions[0]; // Fallback to mock on error
+      if (error) throw error;
+      return this.transformSession(data);
+    } catch (error) {
+      console.error('Error fetching real session:', error);
+      return null;
     }
-
-    return this.transformSession(data);
   },
 
+  /**
+   * Fetches all sessions where the user is an organizer or participant.
+   */
   async getUserSessions(profileId: string): Promise<MeetupSession[]> {
     if (isPlaceholder) {
       return [...Object.values(demoSessionsCache), ...mockSessions];
@@ -129,67 +133,120 @@ export const meetupService = {
             profile:profiles(*)
           )
         `)
-        .or(`creator_id.eq.${profileId},id.in.(select session_id from session_participants where profile_id = '${profileId}')`);
+        // This query finds sessions where user is organizer OR is in session_participants
+        .or(`organizer_id.eq.${profileId},id.in.(select session_id from session_participants where profile_id = '${profileId}')`)
+        .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching user sessions:', error);
-        return mockSessions;
-      }
-
+      if (error) throw error;
       return data.map(this.transformSession);
-    } catch (e) {
-      return mockSessions;
+    } catch (error) {
+      console.error('Error fetching user sessions from Supabase:', error);
+      return [];
     }
   },
 
-  async updateParticipantLocation(sessionId: string, profileId: string, lat: number, lng: number): Promise<void> {
-    if (isPlaceholder) return;
-    
-    await supabase
-      .from('session_participants')
-      .update({ lat, lng })
-      .eq('session_id', sessionId)
-      .eq('profile_id', profileId);
-  },
-
-  async finalizeSession(sessionId: string, venueId: string, venueName: string): Promise<boolean> {
+  /**
+   * Confirms a venue and moves the session to 'confirmed' state.
+   */
+  async finalizeSession(sessionId: string, venueId: string): Promise<boolean> {
     if (isPlaceholder || sessionId.startsWith('mock_')) {
       if (demoSessionsCache[sessionId]) {
-        demoSessionsCache[sessionId].status = 'active';
-        demoSessionsCache[sessionId].selectedVenueId = venueId;
+        demoSessionsCache[sessionId].state = 'confirmed';
+        demoSessionsCache[sessionId].chosenVenueId = venueId;
       }
       return true;
     }
 
-    const { error } = await supabase
-      .from('meetup_sessions')
-      .update({
-        selected_venue_id: venueId,
-        status: 'active',
-      })
-      .eq('id', sessionId);
+    try {
+      const { error } = await supabase
+        .from('meetup_sessions')
+        .update({
+          chosen_venue_id: venueId,
+          state: 'confirmed',
+        })
+        .eq('id', sessionId);
 
-    return !error;
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error finalizing real session:', error);
+      return false;
+    }
   },
 
+  /**
+   * Updates participant's live location and preferences.
+   */
+  async updateParticipantLocation(
+    sessionId: string, 
+    userId: string, 
+    lat: number, 
+    lng: number, 
+    mode?: string, 
+    maxMinutes?: number
+  ): Promise<boolean> {
+    if (isPlaceholder || sessionId.startsWith('mock_')) {
+      const session = demoSessionsCache[sessionId] || mockSessions.find(s => s.id === sessionId);
+      if (session) {
+        const participant = session.participants.find(p => p.userId === userId);
+        if (participant) {
+          participant.location = { lat, lng };
+          if (mode) participant.mode = mode as any;
+          if (maxMinutes) participant.maxTravelMinutes = maxMinutes;
+          participant.status = 'ready';
+        }
+        demoSessionsCache[sessionId] = { ...session };
+      }
+      return true;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('session_participants')
+        .update({
+          lat,
+          lng,
+          status: 'ready',
+          mode: mode || 'walk',
+          max_travel_minutes: maxMinutes || 30,
+        })
+        .eq('session_id', sessionId)
+        .eq('profile_id', userId);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error updating real participant data:', error);
+      return false;
+    }
+  },
+
+  /**
+   * Normalizes DB response into typed MeetupSession object.
+   */
   transformSession(data: any): MeetupSession {
     return {
       id: data.id,
+      organizerId: data.organizer_id,
       title: data.title,
-      type: data.type,
-      date: data.created_at,
-      status: data.status,
-      selectedVenueId: data.selected_venue_id,
+      preferences: data.preferences,
+      createdAt: data.created_at,
+      state: data.state,
+      chosenVenueId: data.chosen_venue_id,
       participants: (data.participants || []).map((p: any) => ({
         id: p.id,
         userId: p.profile_id,
-        profile: {
+        name: p.profile?.full_name || 'Anonymous',
+        profile: p.profile ? {
           id: p.profile.id,
-          name: p.profile.full_name,
-          avatarUrl: p.profile.avatar_url,
-        },
+          name: p.profile.full_name || 'Anonymous',
+          avatarUrl: p.profile.avatar_url || `https://i.pravatar.cc/150?u=${p.profile_id}`
+        } : undefined,
         location: p.lat ? { lat: p.lat, lng: p.lng } : undefined,
         status: p.status,
+        mode: p.mode || 'walk',
+        maxTravelMinutes: p.max_travel_minutes || 30,
+        weight: p.weight || 1.0,
         etaMinutes: p.eta_minutes,
       })),
     };

@@ -67,10 +67,11 @@ function RootLayoutNav() {
   const segments = useSegments();
 
   useEffect(() => {
-    if (segments.length === 0) return;
+    const path = segments as string[];
+    if (path.length === 0) return;
 
-    const inAuthGroup = segments[0] === '(auth)';
-    const inOnboarding = segments[0] === 'onboarding';
+    const inAuthGroup = path[0] === '(auth)';
+    const inOnboarding = path[0] === 'onboarding';
 
     if (!isAuthenticated) {
       if (!inAuthGroup) {

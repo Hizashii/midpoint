@@ -21,6 +21,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   isOnboarded: false, 
   
   initialize: async () => {
+    // Get initial session
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
       const { data: profile } = await supabase
@@ -40,8 +41,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       });
     }
 
+    // Listen for auth changes
     supabase.auth.onAuthStateChange(async (_event, session) => {
-      set({ session, isAuthenticated: !!session });
       if (session) {
         const { data: profile } = await supabase
           .from('profiles')
@@ -49,44 +50,50 @@ export const useAuthStore = create<AuthState>((set) => ({
           .eq('id', session.user.id)
           .single();
         
-        if (profile) {
-          set({ user: { id: profile.id, name: profile.full_name, avatarUrl: profile.avatar_url } });
-        }
+        set({ 
+          session,
+          isAuthenticated: true,
+          user: profile ? { id: profile.id, name: profile.full_name, avatarUrl: profile.avatar_url } : null 
+        });
       } else {
-        set({ user: null });
+        set({ user: null, session: null, isAuthenticated: false });
       }
     });
   },
 
   login: async (email: string) => {
-    // Defensive check for non-string input
-    const emailString = typeof email === 'string' ? email : 'guest@example.com';
-    
-    // For prototype, we simulate a sign in or just ensure profile exists for the current auth user
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .upsert({ 
-          id: user.id, 
-          full_name: emailString.split('@')[0],
-          avatar_url: `https://i.pravatar.cc/150?u=${user.id}`
-        })
-        .select()
-        .single();
+    try {
+      // In a production app, this would use supabase.auth.signInWithOtp or signInWithPassword
+      // For this phase, we ensure the profile exists for the authenticated user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .upsert({ 
+            id: user.id, 
+            full_name: email.split('@')[0] || 'User',
+            avatar_url: `https://i.pravatar.cc/150?u=${user.id}`,
+            updated_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
 
-      if (profile) {
+        if (error) throw error;
+
         set({ 
           user: { id: profile.id, name: profile.full_name, avatarUrl: profile.avatar_url },
           isAuthenticated: true 
         });
+      } else {
+        // Fallback for demo/dev mode without real Auth
+        set({ 
+          user: { id: 'demo_user', name: 'Demo Guest', avatarUrl: 'https://i.pravatar.cc/150?u=demo' },
+          isAuthenticated: true 
+        });
       }
-    } else {
-      // If no auth user (demo mode), set a mock
-      set({ 
-        user: { id: 'demo_user', name: emailString.split('@')[0], avatarUrl: 'https://i.pravatar.cc/150?u=demo' },
-        isAuthenticated: true 
-      });
+    } catch (error) {
+      console.error('Login/Profile Sync Error:', error);
     }
   },
 
